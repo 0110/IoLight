@@ -2,6 +2,7 @@
 
 #include <Homie.h>
 #include <Adafruit_NeoPixel.h>
+#include "ColorUtil.h"
 
 #define firmwareVersion "0.1.1"
 
@@ -67,6 +68,14 @@ void loop() {
       }
       pixels.show();
       mLastLedChanges = millis();    
+    }
+  } else {
+    static uint8_t position = 0;
+    if ( ((millis() - mLastLedChanges) >= 20) ||
+        (mLastLedChanges == 0) ) {
+      RainbowCycle(&pixels, &position);
+      mLastLedChanges = millis();    
+      Serial << "." << position << endl;
     }
   }
 
