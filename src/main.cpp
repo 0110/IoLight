@@ -15,6 +15,7 @@ Adafruit_NeoPixel pixels(NUMBER_OF_LED, D1, NEO_GRB + NEO_KHZ800);
 HomieNode ledNode("strip", "Strip", "strip", true, 1, NUMBER_OF_LED);
 bool mHomieConfigured = false;
 unsigned long mLastLedChanges = 0U;
+bool somethingReceived = false;
 
 void loopHandler() {
   //TODO add here some logic, that is triggered when Homie is configured
@@ -24,6 +25,8 @@ bool lightOnHandler(const HomieRange& range, const String& value) {
   if (!range.isRange) return false;  // if it's not a range
 
   if (range.index < 1 || range.index > NUMBER_OF_LED) return false;  // if it's not a valid range
+
+  somethingReceived = true; // Stop animation
 
   if (value != "on" && value != "off") return false;  // if the value is not valid
 
@@ -69,7 +72,7 @@ void loop() {
       pixels.show();
       mLastLedChanges = millis();    
     }
-  } else {
+  } else if (!somethingReceived) {
     static uint8_t position = 0;
     if ( ((millis() - mLastLedChanges) >= 20) ||
         (mLastLedChanges == 0) ) {
