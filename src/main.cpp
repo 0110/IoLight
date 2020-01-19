@@ -3,15 +3,21 @@
 #include <Homie.h>
 #include <Adafruit_NeoPixel.h>
 
-#define firmwareVersion "0.1.0"
+#define firmwareVersion "0.1.1"
 
 #define NUMBER_OF_LED 6
+
+#define BLINK_INTERVAL  500 /**< Milliseconds */
 
 Adafruit_NeoPixel pixels(NUMBER_OF_LED, D1, NEO_GRB + NEO_KHZ800);
 
 HomieNode ledNode("strip", "Strip", "strip", true, 1, NUMBER_OF_LED);
-bool mHomeConfigured = false;
+bool mHomieConfigured = false;
 unsigned long mLastLedChanges = 0U;
+
+void loopHandler() {
+  //TODO add here some logic, that is triggered when Homie is configured
+}
 
 bool lightOnHandler(const HomieRange& range, const String& value) {
   if (!range.isRange) return false;  // if it's not a range
@@ -30,47 +36,50 @@ void setup() {
   Serial.begin(115200);
   Serial << endl << endl;
   Homie_setFirmware("light", firmwareVersion);
+  Homie.setLoopFunction(loopHandler);
   ledNode.advertise("color").settable(lightOnHandler);
   pixels.begin();
   pixels.clear();
-  Homie.setup();
 
-  mHomeConfigured = Homie.isConfigured();
+  /* Set everything to red on start */
+  for( int i = 0; i < NUMBER_OF_LED; i++ ) {
+      pixels.setPixelColor(i, 20 /*red */, 0 /* green */, 0 /* blue */);
+  }
+  pixels.show();
+
+  Homie.setup();
+  pinMode(D0, INPUT); // GPIO0 as input
+  mHomieConfigured = Homie.isConfigured();
 }
 
 void loop() {
   Homie.loop();
-  if (!mHomeConfigured) {
-    if ((millis() - mLastLedChanges) < 1000)
-    {
-      for(int i=0; i < NUMBER_OF_LED; i++) {
-        pixels.setPixelColor(i, pixels.Color(0, 0, 0));
+  if (!mHomieConfigured) {
+    if ( ((millis() - mLastLedChanges) >= BLINK_INTERVAL) ||
+        (mLastLedChanges == 0) ) {
+      int blue = 128;
+      // set the colors for the strip
+      if (pixels.getPixelColor(0) > 0) {
+        blue = 0;
+      }
+      for( int i = 0; i < NUMBER_OF_LED; i++ ) {
+          pixels.setPixelColor(i, 0 /*red */, 0 /* green */, blue /* blue */);
       }
       pixels.show();
-    } else if ( (millis() - mLastLedChanges) < 2000)
-    {
-      for(int i=0; i < NUMBER_OF_LED; i++) {
-        pixels.setPixelColor(i, pixels.Color(0, 150, 0));
-      }
-      pixels.show();
-    }
-    else if ((millis() - mLastLedChanges) < 3000)
-    {
-      for(int i=0; i < NUMBER_OF_LED; i++) {
-        pixels.setPixelColor(i, pixels.Color(0, 0, 150));  
-      }
-      pixels.show();
-    }
-    else if ((millis() - mLastLedChanges) < 4000)
-    {
-      for(int i=0; i < NUMBER_OF_LED; i++) {
-        pixels.setPixelColor(i, pixels.Color(150, 0, 0));  
-      }
-      pixels.show();
-    }
-    else
-    {
-      mLastLedChanges = millis();
+      mLastLedChanges = millis();    
     }
   }
+
+  // Use Flash button to reset configuration
+  if (digitalRead(D0) == HIGH) {
+    if (Homie.isConfigured()) {
+      Serial << "Delete Configuration" << endl;
+      SPIFFS.begin();
+      SPIFFS.format();
+      SPIFFS.end();
+    } else {
+      Serial << "GPPIO 0 pressed" << endl;
+    }
+  }
+
 }
