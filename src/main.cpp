@@ -47,7 +47,7 @@ void setup() {
 
   /* Set everything to red on start */
   for( int i = 0; i < NUMBER_OF_LED; i++ ) {
-      pixels.setPixelColor(i, 20 /*red */, 0 /* green */, 0 /* blue */);
+      pixels.setPixelColor(i, 0 /*red */, 20 /* green */, 0 /* blue */);
   }
   pixels.show();
 
