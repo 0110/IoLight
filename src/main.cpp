@@ -11,11 +11,13 @@
 #define BLINK_INTERVAL  500 /**< Milliseconds */
 #define RESET_TRIGGER   2048
 
-Adafruit_NeoPixel pixels(NUMBER_LEDS, D1, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel* pPixels = NULL;
 
 HomieNode ledNode("strip", "Strip", "strip", true, 1, NUMBER_LEDS);
 HomieNode oneLedNode /* to rule them all */("led", "Light", "led");
 HomieNode lampNode("lamp", "Lamp", "WhiteLED");
+
+HomieSetting<long> ledAmount("leds", "Amount of LEDs (of type WS2812); Range 1 to 2047");
 
 bool mHomieConfigured = false;
 unsigned long mLastLedChanges = 0U;
@@ -48,11 +50,13 @@ bool allLedsHandler(const HomieRange& range, const String& value) {
   int satu = value.substring(sep1 + 1, sep2).toInt(); /* OpenHAB saturation (0-100%) */
   int bright = value.substring(sep2 + 1, value.length()).toInt(); /* brightness (0-100%) */
 
-  pixels.clear();  // Initialize all pixels to 'off'
-  for( int i = 0; i < NUMBER_LEDS; i++ ) {
-      pixels.setPixelColor(i, pixels.ColorHSV(65535 * hue / 360, 255 * satu / 100, 255 * bright / 100));
+  if (pPixels) {
+    pPixels->clear();  // Initialize all pixels to 'off'
+    for( int i = 0; i < ledAmount.get(); i++ ) {
+        pPixels->setPixelColor(i, pPixels->ColorHSV(65535 * hue / 360, 255 * satu / 100, 255 * bright / 100));
+    }
+    pPixels->show();   // make sure it is visible
   }
-  pixels.show();   // make sure it is visible
   return true;
 }
 
@@ -60,13 +64,17 @@ bool allLedsHandler(const HomieRange& range, const String& value) {
 bool lightOnHandler(const HomieRange& range, const String& value) {
   if (!range.isRange) return false;  // if it's not a range
 
-  if (range.index < 1 || range.index > NUMBER_LEDS) return false;  // if it's not a valid range
+  if (range.index < 1 || range.index > ledAmount.get()) return false;  // if it's not a valid range
 
   somethingReceived = true; // Stop animation
 
-  pixels.clear();  // Initialize all pixels to 'off'
+  if (pPixels == NULL) {
+    return false;
+  }
+
+  pPixels->clear();  // Initialize all pixels to 'off'
   if (value == "off" || value == "Off" || value == "OFF") {
-      pixels.setPixelColor(range.index - 1, pixels.ColorHSV(0, 0, 0));
+      pPixels->setPixelColor(range.index - 1, pPixels->ColorHSV(0, 0, 0));
   } else {
     /* Parse the color */
     int sep1 = value.indexOf(',');
@@ -74,11 +82,11 @@ bool lightOnHandler(const HomieRange& range, const String& value) {
     int hue = value.substring(0,sep1).toInt(); /* OpenHAB  hue (0-360°) */
     int satu = value.substring(sep1 + 1, sep2).toInt(); /* OpenHAB saturation (0-100%) */
     int bright = value.substring(sep2 + 1, value.length()).toInt(); /* brightness (0-100%) */
-    pixels.setPixelColor(range.index - 1, pixels.ColorHSV(65535 * hue / 360, 
+    pPixels->setPixelColor(range.index - 1, pPixels->ColorHSV(65535 * hue / 360, 
                                                           255 * satu / 100, 
                                                           255 * bright / 100));
   }
-  pixels.show();   // make sure it is visible
+  pPixels->show();   // make sure it is visible
 
   ledNode.setProperty("led").setRange(range).send(value);  // Update the state of the led
   Homie.getLogger() << "Led " << range.index << " is " << value << endl;
@@ -87,25 +95,34 @@ bool lightOnHandler(const HomieRange& range, const String& value) {
 }
 
 void setup() {
+  /* Load Filesystem */
+  SPIFFS.begin();
   Serial.begin(115200);
   Serial << endl << endl;
   Homie_setFirmware("light", firmwareVersion);
   Homie.setLoopFunction(loopHandler);
-  ledNode.advertise("led").settable(lightOnHandler);
+  ledNode.advertise("led").setName("Each Leds").setDatatype("color").settable(lightOnHandler);
   oneLedNode.advertise("ambient").setName("All Leds")
                             .setDatatype("color").settable(allLedsHandler);
   lampNode.advertise("value").setName("Value")
                                       .setDatatype("boolean")
                                       .settable(switchHandler);
-               
-  pixels.begin();
-  pixels.clear();
+
+  // Load the settings
+  ledAmount.setDefaultValue(NUMBER_LEDS).setValidator([] (long candidate) {
+    return (candidate > 0) && (candidate < 2048);
+  });
+
+  pPixels = new Adafruit_NeoPixel(ledAmount.get(), D1, NEO_GRB + NEO_KHZ800);
+
+  pPixels->begin();
+  pPixels->clear();
 
   /* Set everything to red on start */
-  for( int i = 0; i < NUMBER_LEDS; i++ ) {
-      pixels.setPixelColor(i, 0 /*red */, 20 /* green */, 0 /* blue */);
+  for( int i = 0; i < ledAmount.get(); i++ ) {
+      pPixels->setPixelColor(i, 0 /*red */, 20 /* green */, 0 /* blue */);
   }
-  pixels.show();
+  pPixels->show();
 
   Homie.setup();
   pinMode(D0, INPUT); // GPIO0 as input
@@ -119,20 +136,20 @@ void loop() {
         (mLastLedChanges == 0) ) {
       int blue = 128;
       // set the colors for the strip
-      if (pixels.getPixelColor(0) > 0) {
+      if (pPixels->getPixelColor(0) > 0) {
         blue = 0;
       }
-      for( int i = 0; i < NUMBER_LEDS; i++ ) {
-          pixels.setPixelColor(i, 0 /*red */, 0 /* green */, blue /* blue */);
+      for( int i = 0; i < ledAmount.get(); i++ ) {
+          pPixels->setPixelColor(i, 0 /*red */, 0 /* green */, blue /* blue */);
       }
-      pixels.show();
+      pPixels->show();
       mLastLedChanges = millis();    
     }
   } else if (!somethingReceived) {
     static uint8_t position = 0;
     if ( ((millis() - mLastLedChanges) >= 20) ||
         (mLastLedChanges == 0) ) {
-      RainbowCycle(&pixels, &position);
+      RainbowCycle(pPixels, &position);
       mLastLedChanges = millis();    
     }
   }
@@ -142,16 +159,19 @@ void loop() {
     if (Homie.isConfigured()) {
       if (mCount > RESET_TRIGGER) {
         /* shutoff the LEDs */
-        for( int i = 0; i < NUMBER_LEDS; i++ ) {
-            pixels.setPixelColor(i, pixels.Color(0 /*red */, 0 /* green */, 0 /* blue */));
+        for( int i = 0; i < ledAmount.get(); i++ ) {
+            pPixels->setPixelColor(i, pPixels->Color(0 /*red */, 0 /* green */, 0 /* blue */));
         }
-        pixels.show();   // make sure it is visible
-        Serial << "Delete Configuration" << endl;
-        SPIFFS.format();
+        pPixels->show();   // make sure it is visible
+        if (SPIFFS.exists ("/homie/config.json") ) 
+        { 
+          Serial << "Delete Configuration" << endl;
+          SPIFFS.remove("/homie/config.json");
+        }
         SPIFFS.end();
       } else {
         uint8_t position = (uint8_t) (mCount * 255 / RESET_TRIGGER);
-        RainbowCycle(&pixels, &position);
+        RainbowCycle(pPixels, &position);
         Serial << mCount << "/" << RESET_TRIGGER << " to reset" << endl;
         mCount++;
       }
@@ -159,10 +179,10 @@ void loop() {
   } else {
     if (mCount > 0) {
       /* shutoff the LEDs */
-      for( int i = 0; i < NUMBER_LEDS; i++ ) {
-            pixels.setPixelColor(i, pixels.Color(0 /*red */, 0 /* green */, 0 /* blue */));
+      for( int i = 0; i < ledAmount.get(); i++ ) {
+            pPixels->setPixelColor(i, pPixels->Color(0 /*red */, 0 /* green */, 0 /* blue */));
         }
-        pixels.show();   // make sure it is visible
+        pPixels->show();   // make sure it is visible
       mCount = 0;
     }
   }
