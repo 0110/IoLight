@@ -3,13 +3,7 @@
 #include <Homie.h>
 #include <Adafruit_NeoPixel.h>
 #include "ColorUtil.h"
-
-#define firmwareVersion "0.2.1"
-
-#define NUMBER_LEDS 6
-
-#define BLINK_INTERVAL  500 /**< Milliseconds */
-#define RESET_TRIGGER   2048
+#include "LightConfiguration.h"
 
 Adafruit_NeoPixel* pPixels = NULL;
 
@@ -17,13 +11,6 @@ HomieNode ledNode("strip", "Strip", "strip", true, 1, NUMBER_LEDS);
 HomieNode oneLedNode /* to rule them all */("led", "Light", "led");
 HomieNode lampNode("lamp", "Lamp", "WhiteLED");
 HomieNode motion("motion", "motion", "Motion detected");
-
-HomieSetting<long> ledAmount("leds", "Amount of LEDs (of type WS2812); Range 1 to 2047");
-HomieSetting<bool> motionActivation("motionactivation", "Activate light on motion");
-HomieSetting<const char*> dayColor("colorDay", "color to show at day");
-HomieSetting<const char*> nightColor("nightColor", "color to show at night");
-HomieSetting<long> nightStartHour("nightstart", "Hour when night starts (0-23)");
-HomieSetting<long> nightEndHour("nightend", "Hour when night ends (0-23)");
 
 bool mHomieConfigured = false;
 unsigned long mLastLedChanges = 0U;
@@ -111,7 +98,7 @@ void setup() {
   SPIFFS.begin();
   Serial.begin(115200);
   Serial << endl << endl;
-  Homie_setFirmware("light", firmwareVersion);
+  Homie_setFirmware("light", FIRMWARE_VERSION);
   Homie.setLoopFunction(loopHandler);
   ledNode.advertise("led").setName("Each Leds").setDatatype("color").settable(lightOnHandler);
   motion.advertise("motion").setName("Motion").setDatatype("boolean");
@@ -121,9 +108,22 @@ void setup() {
                                       .setDatatype("boolean")
                                       .settable(switchHandler);
 
-  // Load the settings
+  // Load the settings and  set default values
   ledAmount.setDefaultValue(NUMBER_LEDS).setValidator([] (long candidate) {
     return (candidate > 0) && (candidate < 2048);
+  });
+  motionActivation.setDefaultValue(false);
+  dayColor.setDefaultValue("off").setValidator([] (const char *candidate) {
+    return true;
+  });
+  nightColor.setDefaultValue("red").setValidator([] (const char *candidate) {
+    return true;
+  });
+  nightStartHour.setDefaultValue(22).setValidator([] (long candidate) {
+    return (candidate >= 0) && (candidate < 24);
+  });
+  nightEndHour.setDefaultValue(6).setValidator([] (long candidate) {
+    return (candidate >= 0) && (candidate < 24);
   });
 
   pPixels = new Adafruit_NeoPixel(ledAmount.get(), D1, NEO_GRB + NEO_KHZ800);
