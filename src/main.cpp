@@ -133,6 +133,9 @@ void setup() {
   nightEndHour.setDefaultValue(6).setValidator([] (long candidate) {
     return (candidate >= 0) && (candidate < 24);
   });
+  minimumActivation.setDefaultValue(1).setValidator([] (long candidate) {
+    return (candidate >= 0) && (candidate < 1000);
+  });
 
   pPixels = new Adafruit_NeoPixel(ledAmount.get(), D1, NEO_GRB + NEO_KHZ800);
 

@@ -21,5 +21,6 @@ HomieSetting<const char*> dayColor("colorDay", "color to show at day");
 HomieSetting<const char*> nightColor("nightColor", "color to show at night");
 HomieSetting<long> nightStartHour("nightstart", "Hour when night starts (0-23)");
 HomieSetting<long> nightEndHour("nightend", "Hour when night ends (0-23)");
+HomieSetting<long> minimumActivation("minimumAct", "Activation in minutes (1-999)");
 
 #endif /*  LIGHT_CONFIGURATION_H */
