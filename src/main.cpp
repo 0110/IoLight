@@ -4,7 +4,7 @@
 #include <Adafruit_NeoPixel.h>
 #include "ColorUtil.h"
 
-#define firmwareVersion "0.1.1"
+#define firmwareVersion "0.2.1"
 
 #define NUMBER_LEDS 6
 
@@ -16,6 +16,7 @@ Adafruit_NeoPixel* pPixels = NULL;
 HomieNode ledNode("strip", "Strip", "strip", true, 1, NUMBER_LEDS);
 HomieNode oneLedNode /* to rule them all */("led", "Light", "led");
 HomieNode lampNode("lamp", "Lamp", "WhiteLED");
+HomieNode motion("motion", "motion", "Motion detected");
 
 HomieSetting<long> ledAmount("leds", "Amount of LEDs (of type WS2812); Range 1 to 2047");
 
@@ -24,8 +25,14 @@ unsigned long mLastLedChanges = 0U;
 bool somethingReceived = false;
 
 unsigned int mCount = 0;
+bool mLastMotion=false;
 
 void loopHandler() {
+  if (mLastMotion != digitalRead(D6)) {
+    mLastMotion = digitalRead(D6);
+    Serial << "Motion: " << mLastMotion << endl;
+    motion.setProperty("motion").send(String(mLastMotion ? "true" : "false"));
+  }
 
   // Feed the dog -> ESP stay alive
   ESP.wdtFeed();
@@ -102,6 +109,7 @@ void setup() {
   Homie_setFirmware("light", firmwareVersion);
   Homie.setLoopFunction(loopHandler);
   ledNode.advertise("led").setName("Each Leds").setDatatype("color").settable(lightOnHandler);
+  motion.advertise("motion").setName("Motion").setDatatype("boolean");
   oneLedNode.advertise("ambient").setName("All Leds")
                             .setDatatype("color").settable(allLedsHandler);
   lampNode.advertise("value").setName("Value")
@@ -127,6 +135,7 @@ void setup() {
   Homie.setup();
   pinMode(D0, INPUT); // GPIO0 as input
   mHomieConfigured = Homie.isConfigured();
+  pinMode(D6, INPUT);
 }
 
 void loop() {
@@ -145,6 +154,7 @@ void loop() {
       pPixels->show();
       mLastLedChanges = millis();    
     }
+
   } else if (!somethingReceived) {
     static uint8_t position = 0;
     if ( ((millis() - mLastLedChanges) >= 20) ||

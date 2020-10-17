@@ -26,3 +26,8 @@ To be done
 * File
  * Open Workspace
   * Select the file in this repository:  WIoLight.code-workspace
+
+# Hardware
+D2: WS2812 RGB LEDs
+D1: Button
+D6: IR PIR motion sensor
