@@ -65,3 +65,8 @@ void RainbowCycle (Adafruit_NeoPixel* pix, uint8_t *pIndex)
     (*pIndex) = Index + 1;
     pix->show();
 }
+
+uint32_t extractColor(const char *text, int length)  {
+    //TODO
+    return 0;
+}

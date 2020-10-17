@@ -20,10 +20,18 @@ unsigned int mCount = 0;
 bool mLastMotion=false;
 
 void loopHandler() {
+  // Handle motion sensor
   if (mLastMotion != digitalRead(D6)) {
     mLastMotion = digitalRead(D6);
     Serial << "Motion: " << mLastMotion << endl;
     motion.setProperty("motion").send(String(mLastMotion ? "true" : "false"));
+
+    somethingReceived = true;
+    /* Set everything to red on start */
+    for( int i = 0; i < ledAmount.get(); i++ ) {
+        pPixels->setPixelColor(i, mLastMotion * 128 /*red */, 0 /* green */, 0 /* blue */);
+    }
+    pPixels->show();
   }
 
   // Feed the dog -> ESP stay alive
