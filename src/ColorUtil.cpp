@@ -88,6 +88,8 @@ uint32_t extractColor(const char *text, int length)  {
         return 0x0000FF00;
     } else if (COMPARE_STR(text, length, "blue") == 0) {
         return 0x000000FF;
+    } else if (COMPARE_STR(text, length, "white") == 0) {
+        return 0x00FFFFFF;
     }  else if (text[0] == '#' && length >= 7) { /* parse #rrggbb or #RRGGBB */
         int red, green, blue = 0;
         int parsed = sscanf(text, "#%2X%2X%2X", &red, &green, &blue);
