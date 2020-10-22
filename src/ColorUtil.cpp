@@ -7,6 +7,7 @@
  */
 #include "ColorUtil.h"
 
+#ifndef UNIT_TEST
 #include <Adafruit_NeoPixel.h>
 
 /*!
@@ -65,6 +66,8 @@ void RainbowCycle (Adafruit_NeoPixel* pix, uint8_t *pIndex)
     (*pIndex) = Index + 1;
     pix->show();
 }
+
+#endif
 
 uint32_t extractColor(const char *text, int length)  {
     //TODO

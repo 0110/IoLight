@@ -1,9 +1,21 @@
+/**
+ * @file main.cpp
+ * @author your name (you@domain.com)
+ * @brief 
+ * @version 0.1
+ * @date 2020-01-17
+ * 
+ * @copyright Copyright (c) 2020
+ * 
+ */
+
+#ifndef UNIT_TEST
 #include <Arduino.h>
 
 #include <Homie.h>
 #include <Adafruit_NeoPixel.h>
-#include "ColorUtil.h"
 #include "LightConfiguration.h"
+#include "ColorUtil.h"
 
 Adafruit_NeoPixel* pPixels = NULL;
 
@@ -214,3 +226,4 @@ void loop() {
   }
 
 }
+#endif

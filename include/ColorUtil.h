@@ -8,6 +8,7 @@
 #define COLOR_UTIL
 
 #include <stdint.h>
+#ifndef UNIT_TEST
 #include <Adafruit_NeoPixel.h>
 
 typedef enum dir_t {
@@ -17,6 +18,7 @@ typedef enum dir_t {
 
 
 void RainbowCycle (Adafruit_NeoPixel* pix, uint8_t *pIndex);
+#endif
 
 /**
  * @brief Extract color form a given string
