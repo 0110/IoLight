@@ -29,8 +29,8 @@ void RainbowCycle (Adafruit_NeoPixel* pix, uint8_t *pIndex);
  * - white
  * - black
  * - off
- * - RRGGBB     (red, green blue as hex values: 0-F (uppercase))
- * - rrggbb     (red, green blue as hex values: 0-f (lowercase))
+ * - #RRGGBB     (red, green blue as hex values: 0-F (uppercase))
+ * - #rrggbb     (red, green blue as hex values: 0-f (lowercase))
  * @param text      The text with the color information
  * @param length    The amout of characters in the given text 
  * @return uint32_t 32-bit color value. Most significant byte is white (for RGBW

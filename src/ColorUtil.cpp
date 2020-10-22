@@ -6,6 +6,10 @@
  * https://learn.adafruit.com/multi-tasking-the-arduino-part-3/utility-functions
  */
 #include "ColorUtil.h"
+#include "string.h"
+
+#define MIN(a, b)   ((a) > (b) ? b : a)
+#define COMPARE_STR(text,length, staticText)    strncmp(text, staticText, MIN(length, (int) strlen(staticText)))
 
 #ifndef UNIT_TEST
 #include <Adafruit_NeoPixel.h>
@@ -69,7 +73,21 @@ void RainbowCycle (Adafruit_NeoPixel* pix, uint8_t *pIndex)
 
 #endif
 
+
 uint32_t extractColor(const char *text, int length)  {
-    //TODO
+    /* invalid values are returned as black */
+    if ((length <= 0) ||
+        (text == NULL) ){
+        return 0;
+    }
+
+    if (COMPARE_STR(text, length, "red") == 0) {
+        return 0x0F00;
+    } else if (COMPARE_STR(text, length, "green") == 0) {
+        return 0x00F0;
+    } else if (COMPARE_STR(text, length, "blue") == 0) {
+        return 0x000F;
+    }
+
     return 0;
 }
