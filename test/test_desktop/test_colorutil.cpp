@@ -56,11 +56,28 @@ void test_rrggbb(void) {
     TEST_ASSERT_EQUAL(0x00123456U, CALL_COLOREXTARCT("#123456"));
 }
 
+/**
+ * @brief Test faulty values
+ * 
+ */
+void test_noneColorValues(void) {
+    TEST_ASSERT_EQUAL(0x00000000U, CALL_COLOREXTARCT("asdf"));
+    TEST_ASSERT_EQUAL(0x00000000U, CALL_COLOREXTARCT("#asdasdas"));
+    TEST_ASSERT_EQUAL(0x00000000U, CALL_COLOREXTARCT("#HelloWorld"));
+    TEST_ASSERT_EQUAL(0x00000000U, CALL_COLOREXTARCT("#00AABBVV"));
+    TEST_ASSERT_EQUAL(0x00000000U, CALL_COLOREXTARCT("#00AABBCCDD"));
+    TEST_ASSERT_EQUAL(0x00000000U, CALL_COLOREXTARCT("#00ccbbaaff"));
+    TEST_ASSERT_EQUAL(0x00000000U, extractColor(NULL, 7));
+    TEST_ASSERT_EQUAL(0x00000000U, extractColor("red", 7));
+    TEST_ASSERT_EQUAL(0x00000000U, extractColor("#00ff00", 6));
+}
+
 int main(int argc, char **argv) {
     UNITY_BEGIN();
     RUN_TEST(test_colorConversion);
     RUN_TEST(test_RRGGBB);
     RUN_TEST(test_rrggbb);
+    RUN_TEST(test_noneColorValues);
     UNITY_END();
 
     return 0;
