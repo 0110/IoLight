@@ -7,6 +7,7 @@
  */
 #include "ColorUtil.h"
 #include "string.h"
+#include <stdio.h>
 
 #define MIN(a, b)   ((a) > (b) ? b : a)
 #define COMPARE_STR(text,length, staticText)    strncmp(text, staticText, MIN(length, (int) strlen(staticText)))
@@ -82,11 +83,31 @@ uint32_t extractColor(const char *text, int length)  {
     }
 
     if (COMPARE_STR(text, length, "red") == 0) {
-        return 0x0F00;
+        return 0x00FF0000;
     } else if (COMPARE_STR(text, length, "green") == 0) {
-        return 0x00F0;
+        return 0x0000FF00;
     } else if (COMPARE_STR(text, length, "blue") == 0) {
-        return 0x000F;
+        return 0x000000FF;
+    }  else if (text[0] == '#' && length >= 7) { /* parse #rrggbb or #RRGGBB */
+        int red, green, blue = 0;
+        int parsed = sscanf(text, "#%2X%2X%2X", &red, &green, &blue);
+        if (parsed == 3) {
+            uint32_t c = blue;
+            c |= (green << 8);
+            c |= (red << 16);
+            return c;
+        } else {
+            /* try to parse lower case hex values */
+            parsed = sscanf(text, "#%2x%2x%2x", &red, &green, &blue);
+            if (parsed == 3) {
+                uint32_t c = blue;
+                c |= (green << 8);
+                c |= (red << 16);
+                return c;
+            } else {
+                return 0;
+            }
+        }
     }
 
     return 0;
