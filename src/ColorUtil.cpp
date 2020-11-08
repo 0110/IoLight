@@ -83,10 +83,12 @@ uint32_t extractColor(const char *text, int length)  {
     if ((length <= 0) ||
         (text == NULL) ||
         (strlen(text) < (unsigned int) length)){
-        return 0;
+        return 0xFFFFFFFF;
     }
-
-    if ( (COMPARE_STR(text, length, "red") == 0) || (COMPARE_STR(text, length, "RED") == 0) ) {
+    if ( (COMPARE_STR(text, length, "off") == 0) || (COMPARE_STR(text, length, "OFF") == 0) ||
+         (COMPARE_STR(text, length, "black") == 0) || (COMPARE_STR(text, length, "BLACK") == 0) ) {
+        return 0;
+    } else if ( (COMPARE_STR(text, length, "red") == 0) || (COMPARE_STR(text, length, "RED") == 0) ) {
         return 0x00FF0000;
     } else if ( (COMPARE_STR(text, length, "green") == 0) || (COMPARE_STR(text, length, "GREEN") == 0) ) {
         return 0x0000FF00;
@@ -137,9 +139,9 @@ uint32_t extractColor(const char *text, int length)  {
                                                 255 * bright / 100);
 #endif
         } else {
-            return 0; /* wrong format */
+            return 0xFFFFFFFF; /* wrong format */
         }
     }
 
-    return 0;
+    return 0xFFFFFFFF;
 }

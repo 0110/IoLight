@@ -16,6 +16,7 @@
 #include <Adafruit_NeoPixel.h>
 #include "LightConfiguration.h"
 #include "ColorUtil.h"
+#include <time.h>  
 
 Adafruit_NeoPixel* pPixels = NULL;
 
@@ -31,17 +32,55 @@ bool somethingReceived = false;
 unsigned int mCount = 0;
 bool mLastMotion=false;
 
+void onHomieEvent(const HomieEvent &event)
+{
+  switch (event.type)
+  {
+  case HomieEventType::SENDING_STATISTICS:
+    Homie.getLogger() << "My statistics" << endl;
+    break;
+  case HomieEventType::MQTT_READY:
+    Serial.printf("NTP Setup with server %s\r\n", ntpServer.get());
+    configTime(0, 0, ntpServer.get());
+  default:
+    break;
+  }
+}
+
 void loopHandler() {
   // Handle motion sensor
   if (mLastMotion != digitalRead(D6)) {
+    // Read the current time
+    time_t now; // this is the epoch
+    tm tm;      // the structure tm holds time information in a more convient way
+    time(&now);
+    localtime_r(&now, &tm);
+    // Update the motion state
     mLastMotion = digitalRead(D6);
-    Serial << "Motion: " << mLastMotion << endl;
+
+    Serial << "Motion: " << mLastMotion << " at " << (1900 + tm.tm_year) << "-" << (tm.tm_mon + 1) << "-" << tm.tm_mday << " " << tm.tm_hour << ":" << tm.tm_min << ":" << tm.tm_sec << endl;
     motion.setProperty("motion").send(String(mLastMotion ? "true" : "false"));
+
+    /* Tetermine color according to time (night / day) */
+    //FIXME: extractColor(candidate, strlen(candidate))
+
+    if (tm.tm_year < 100){ /* < 2000 as tm_year + 1900 is the year */
+      return;
+    }
+
+    uint32_t color = extractColor(dayColor.get(), strlen(dayColor.get()) );
+    if ((nightStartHour.get() <= tm.tm_hour) || (tm.tm_hour <= nightEndHour.get()) ) {
+        color = extractColor(nightColor.get(), strlen(nightColor.get()) );
+    }
 
     somethingReceived = true;
     /* Set everything to red on start */
     for( int i = 0; i < ledAmount.get(); i++ ) {
-        pPixels->setPixelColor(i, mLastMotion * 128 /*red */, 0 /* green */, 0 /* blue */);
+        if (mLastMotion) {
+          pPixels->setPixelColor(i, color);
+        } else {
+          pPixels->setPixelColor(i, 0);
+        }
     }
     pPixels->show();
   }
@@ -113,6 +152,7 @@ void setup() {
   Serial << endl << endl;
   Homie_setFirmware("light", FIRMWARE_VERSION);
   Homie.setLoopFunction(loopHandler);
+  Homie.onEvent(onHomieEvent);
   ledNode.advertise("led").setName("Each Leds").setDatatype("color").settable(lightOnHandler);
   motion.advertise("motion").setName("Motion").setDatatype("boolean");
   oneLedNode.advertise("ambient").setName("All Leds")
@@ -127,10 +167,10 @@ void setup() {
   });
   motionActivation.setDefaultValue(false);
   dayColor.setDefaultValue("off").setValidator([] (const char *candidate) {
-    return true;
+    return extractColor(candidate, strlen(candidate)) != 0xFFFFFFFF;
   });
   nightColor.setDefaultValue("red").setValidator([] (const char *candidate) {
-    return true;
+    return extractColor(candidate, strlen(candidate)) != 0xFFFFFFFF;
   });
   nightStartHour.setDefaultValue(22).setValidator([] (long candidate) {
     return (candidate >= 0) && (candidate < 24);
@@ -141,6 +181,8 @@ void setup() {
   minimumActivation.setDefaultValue(1).setValidator([] (long candidate) {
     return (candidate >= 0) && (candidate < 1000);
   });
+  ntpServer.setDefaultValue("pool.ntp.org");
+
 
   pPixels = new Adafruit_NeoPixel(ledAmount.get(), D1, NEO_GRB + NEO_KHZ800);
 
