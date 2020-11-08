@@ -96,14 +96,7 @@ bool lightOnHandler(const HomieRange& range, const String& value) {
       pPixels->setPixelColor(range.index - 1, pPixels->ColorHSV(0, 0, 0));
   } else {
     /* Parse the color */
-    int sep1 = value.indexOf(',');
-    int sep2 = value.indexOf(',', sep1 + 1);
-    int hue = value.substring(0,sep1).toInt(); /* OpenHAB  hue (0-360°) */
-    int satu = value.substring(sep1 + 1, sep2).toInt(); /* OpenHAB saturation (0-100%) */
-    int bright = value.substring(sep2 + 1, value.length()).toInt(); /* brightness (0-100%) */
-    pPixels->setPixelColor(range.index - 1, pPixels->ColorHSV(65535 * hue / 360, 
-                                                          255 * satu / 100, 
-                                                          255 * bright / 100));
+    pPixels->setPixelColor(range.index - 1, extractColor(value.c_str(), value.length()));
   }
   pPixels->show();   // make sure it is visible
 

@@ -12,8 +12,11 @@
 #define MIN(a, b)   ((a) > (b) ? b : a)
 #define COMPARE_STR(text,length, staticText)    strncmp(text, staticText, MIN(length, (int) strlen(staticText)))
 
-#ifndef UNIT_TEST
+#ifdef UNIT_TEST
+#include "test_helper.h"
+#else
 #include <Adafruit_NeoPixel.h>
+
 
 /*!
     @brief   Convert separate red, green and blue values into a single
@@ -71,29 +74,29 @@ void RainbowCycle (Adafruit_NeoPixel* pix, uint8_t *pIndex)
     (*pIndex) = Index + 1;
     pix->show();
 }
-
 #endif
 
-
 uint32_t extractColor(const char *text, int length)  {
+    int parsed = 0;
+
     /* invalid values are returned as black */
     if ((length <= 0) ||
         (text == NULL) ||
-        (strlen(text) < length)){
+        (strlen(text) < (unsigned int) length)){
         return 0;
     }
 
-    if (COMPARE_STR(text, length, "red") == 0) {
+    if ( (COMPARE_STR(text, length, "red") == 0) || (COMPARE_STR(text, length, "RED") == 0) ) {
         return 0x00FF0000;
-    } else if (COMPARE_STR(text, length, "green") == 0) {
+    } else if ( (COMPARE_STR(text, length, "green") == 0) || (COMPARE_STR(text, length, "GREEN") == 0) ) {
         return 0x0000FF00;
-    } else if (COMPARE_STR(text, length, "blue") == 0) {
+    } else if ( (COMPARE_STR(text, length, "blue") == 0) || (COMPARE_STR(text, length, "BLUE") == 0) ) {
         return 0x000000FF;
-    } else if (COMPARE_STR(text, length, "white") == 0) {
+    } else if ((COMPARE_STR(text, length, "white") == 0) || (COMPARE_STR(text, length, "WHITE") == 0) ) {
         return 0x00FFFFFF;
     }  else if (text[0] == '#' && length == 7) { /* parse #rrggbb or #RRGGBB */
         int red, green, blue = 0;
-        int parsed = sscanf(text, "#%2X%2X%2X", &red, &green, &blue);
+        parsed = sscanf(text, "#%2X%2X%2X", &red, &green, &blue);
         if (parsed == 3) {
             uint32_t c = blue;
             c |= (green << 8);
@@ -116,6 +119,25 @@ uint32_t extractColor(const char *text, int length)  {
             } else {
                 return 0;
             }
+        }
+    } else {
+        int hue; /* OpenHAB  hue (0-360°) */
+        int satu; /* OpenHAB saturation (0-100%) */
+        int bright; /* brightness (0-100%) */
+
+        parsed = sscanf(text, "%d,%d,%d", &hue, &satu, &bright);
+        if (parsed == 3) {
+#ifndef UNIT_TEST
+            return Adafruit_NeoPixel::ColorHSV(65535 * hue / 360, 
+                                                255 * satu / 100, 
+                                                255 * bright / 100);
+#else
+            return replacementColorHSV(65535 * hue / 360, 
+                                                255 * satu / 100, 
+                                                255 * bright / 100);
+#endif
+        } else {
+            return 0; /* wrong format */
         }
     }
 
