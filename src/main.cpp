@@ -22,7 +22,7 @@ Adafruit_NeoPixel* pPixels = NULL;
 
 HomieNode ledNode("strip", "Strip", "strip", true, 1, NUMBER_LEDS);
 HomieNode oneLedNode /* to rule them all */("led", "Light", "led");
-HomieNode lampNode("lamp", "Lamp", "WhiteLED");
+HomieNode lampNode("lamp", "Lamp", "White LED can be dimmed");
 HomieNode motion("motion", "motion", "Motion detected");
 
 bool mHomieConfigured = false;
@@ -196,9 +196,11 @@ void setup() {
   pPixels->show();
 
   Homie.setup();
-  pinMode(D0, INPUT); // GPIO0 as input
   mHomieConfigured = Homie.isConfigured();
+  pinMode(D0, INPUT); // GPIO0 as input
   pinMode(D6, INPUT);
+  pinMode(D7, OUTPUT); // PWM Pin for white LED
+  analogWrite(D7, 500); // activate LED with 50%
 }
 
 void loop() {
