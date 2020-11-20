@@ -29,7 +29,8 @@ bool mHomieConfigured = false;
 unsigned long mLastLedChanges = 0U;
 bool somethingReceived = false;
 
-unsigned int mCount = 0;
+unsigned int mButtonPressingCount = 0;        /**< Delay before everything is reset */
+unsigned int mPwmFadingCount = PWM_MAXVALUE;  /**< Used for fading white LED */
 bool mLastMotion=false;
 
 void onHomieEvent(const HomieEvent &event)
@@ -199,8 +200,8 @@ void setup() {
   mHomieConfigured = Homie.isConfigured();
   pinMode(D0, INPUT); // GPIO0 as input
   pinMode(D6, INPUT);
-  pinMode(D7, OUTPUT); // PWM Pin for white LED
-  analogWrite(D7, 500); // activate LED with 50%
+  pinMode(D2, OUTPUT); // PWM Pin for white LED
+  analogWrite(D2, 0); // activate LED with 0%
 }
 
 void loop() {
@@ -227,12 +228,19 @@ void loop() {
       RainbowCycle(pPixels, &position);
       mLastLedChanges = millis();    
     }
+    /* Fade in the white light after booting up to 100% */
+    if (mPwmFadingCount > 0) {
+      analogWrite(D2, PWM_MAXVALUE-mPwmFadingCount); 
+      if ((millis() % 100)  == 0) {
+        mPwmFadingCount--;
+      }
+    }
   }
 
   // Use Flash button to reset configuration
   if (digitalRead(D0) == HIGH) {
     if (Homie.isConfigured()) {
-      if (mCount > RESET_TRIGGER) {
+      if (mButtonPressingCount > RESET_TRIGGER) {
         /* shutoff the LEDs */
         for( int i = 0; i < ledAmount.get(); i++ ) {
             pPixels->setPixelColor(i, pPixels->Color(0 /*red */, 0 /* green */, 0 /* blue */));
@@ -245,20 +253,20 @@ void loop() {
         }
         SPIFFS.end();
       } else {
-        uint8_t position = (uint8_t) (mCount * 255 / RESET_TRIGGER);
+        uint8_t position = (uint8_t) (mButtonPressingCount * 255 / RESET_TRIGGER);
         RainbowCycle(pPixels, &position);
-        Serial << mCount << "/" << RESET_TRIGGER << " to reset" << endl;
-        mCount++;
+        Serial << mButtonPressingCount << "/" << RESET_TRIGGER << " to reset" << endl;
+        mButtonPressingCount++;
       }
     } 
   } else {
-    if (mCount > 0) {
+    if (mButtonPressingCount > 0) {
       /* shutoff the LEDs */
       for( int i = 0; i < ledAmount.get(); i++ ) {
             pPixels->setPixelColor(i, pPixels->Color(0 /*red */, 0 /* green */, 0 /* blue */));
         }
         pPixels->show();   // make sure it is visible
-      mCount = 0;
+      mButtonPressingCount = 0;
     }
   }
 
