@@ -22,7 +22,8 @@ Adafruit_NeoPixel* pPixels = NULL;
 
 HomieNode ledNode("strip", "Strip", "strip", true, 1, NUMBER_LEDS);
 HomieNode oneLedNode /* to rule them all */("led", "Light", "led");
-HomieNode lampNode("lamp", "Lamp", "White LED can be dimmed");
+HomieNode lampNode("lamp", "Lamp switch", "White lamp On-Off");
+HomieNode dimmNode("dimm", "Lamp Dimmed", "White lamp can be dimmed");
 HomieNode motion("motion", "motion", "Motion detected");
 
 bool mHomieConfigured = false;
@@ -92,8 +93,14 @@ void loopHandler() {
 
 bool switchHandler(const HomieRange& range, const String& value) {
   if (range.isRange) return false;  // only one switch is present
-  
-  //FIXME add the output of the white lamp
+  if (value == "off" || value == "Off" || value == "OFF" || value == "false") {
+    analogWrite(D2, 0);
+  } else if (value == "on" || value == "On" || value == "ON" || value == "true") {
+    analogWrite(D2, PWM_MAXVALUE);
+  } else {
+    Serial << "MQTT | Unkown Command " << value << endl;
+  }
+  somethingReceived = true; // Stop animation
   return true;
 }
 
@@ -161,6 +168,11 @@ void setup() {
   lampNode.advertise("value").setName("Value")
                                       .setDatatype("boolean")
                                       .settable(switchHandler);
+  dimmNode.advertise("value").setName("Dimmer")
+                                      .setDatatype("number")
+                                      .setUnit("%")
+                                      .settable(switchHandler);
+
 
   // Load the settings and  set default values
   ledAmount.setDefaultValue(NUMBER_LEDS).setValidator([] (long candidate) {
