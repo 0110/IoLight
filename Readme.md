@@ -28,6 +28,7 @@ To be done
   * Select the file in this repository:  WIoLight.code-workspace
 
 # Hardware
-D2: WS2812 RGB LEDs
-D1: Button
+D1: WS2812 RGB LEDs
+D0: Button
 D6: IR PIR motion sensor
+D2: N-Channel Mosfet (e.g. LL2705)
