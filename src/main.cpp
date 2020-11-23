@@ -100,6 +100,9 @@ bool switchHandler(const HomieRange& range, const String& value) {
     analogWrite(D2, 0);
   } else if (value == "on" || value == "On" || value == "ON" || value == "true") {
     analogWrite(D2, PWM_MAXVALUE);
+  } else if ( value.length() > 0 && isDigit(value.charAt(0))  ) {
+      Serial << "MQTT | Dimm to " << value.toInt() << "%" << endl;
+      analogWrite(D2, (value.toInt() * PWM_MAXVALUE) / 100);
   } else {
     Serial << "MQTT | Unkown Command " << value << endl;
   }
