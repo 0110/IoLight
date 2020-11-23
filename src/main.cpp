@@ -24,7 +24,7 @@ HomieNode ledNode("strip", "Strip", "strip", true, 1, NUMBER_LEDS);
 HomieNode oneLedNode /* to rule them all */("led", "Light", "led");
 HomieNode lampNode("lamp", "Lamp switch", "White lamp On-Off");
 HomieNode dimmNode("dimm", "Lamp Dimmed", "White lamp can be dimmed");
-HomieNode motion("motion", "motion", "Motion detected");
+HomieNode monitor("monitor", "Monitor motion", "Monigor motion via PIR");
 
 bool mHomieConfigured = false;
 unsigned long mLastLedChanges = 0U;
@@ -62,7 +62,7 @@ void loopHandler() {
     mLastMotion = digitalRead(D6);
 
     Serial << "Motion: " << mLastMotion << " at " << (1900 + tm.tm_year) << "-" << (tm.tm_mon + 1) << "-" << tm.tm_mday << " " << tm.tm_hour << ":" << tm.tm_min << ":" << tm.tm_sec << endl;
-    motion.setProperty("motion").send(String(mLastMotion ? "true" : "false"));
+    monitor.setProperty("motion").send(String(mLastMotion ? "true" : "false"));
 
     /* Tetermine color according to time (night / day) */
     //FIXME: extractColor(candidate, strlen(candidate))
@@ -164,15 +164,17 @@ void setup() {
   Homie_setFirmware("light", FIRMWARE_VERSION);
   Homie.setLoopFunction(loopHandler);
   Homie.onEvent(onHomieEvent);
-  ledNode.advertise("led").setName("Each Leds").setDatatype("color").settable(lightOnHandler);
-  motion.advertise("motion").setName("Motion").setDatatype("boolean");
+  ledNode.advertise("led").setName("Each Leds").setDatatype("color").setUnit("rgb")
+                            .settable(lightOnHandler);
+  monitor.advertise("motion").setName("Monitor motion").setDatatype("boolean");
   oneLedNode.advertise("ambient").setName("All Leds")
-                            .setDatatype("color").settable(allLedsHandler);
+                            .setDatatype("color").setUnit("rgb")
+                            .settable(allLedsHandler);
   lampNode.advertise("value").setName("Value")
                                       .setDatatype("boolean")
                                       .settable(switchHandler);
   dimmNode.advertise("value").setName("Dimmer")
-                                      .setDatatype("number")
+                                      .setDatatype("integer")
                                       .setUnit("%")
                                       .settable(switchHandler);
 
