@@ -15,6 +15,7 @@
 #define BLINK_INTERVAL  500 /**< Milliseconds */
 #define RESET_TRIGGER   2048
 #define PWM_MAXVALUE    1023
+#define FADE_MAXVALUE   255
 
 HomieSetting<long> ledAmount("leds", "Amount of LEDs (of type WS2812); Range 1 to 2047");
 HomieSetting<bool> motionActivation("motionactivation", "Activate light on motion");

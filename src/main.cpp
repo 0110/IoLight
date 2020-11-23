@@ -32,6 +32,7 @@ bool somethingReceived = false;
 
 unsigned int mButtonPressingCount = 0;        /**< Delay before everything is reset */
 unsigned int mPwmFadingCount = PWM_MAXVALUE;  /**< Used for fading white LED */
+unsigned int mColorFadingCount = FADE_MAXVALUE;
 bool mLastMotion=false;
 
 void onHomieEvent(const HomieEvent &event)
@@ -79,6 +80,8 @@ void loopHandler() {
     /* Set everything to red on start */
     for( int i = 0; i < ledAmount.get(); i++ ) {
         if (mLastMotion) {
+          mColorFadingCount = 1;
+          pPixels->setBrightness(mColorFadingCount);
           pPixels->setPixelColor(i, color);
         } else {
           pPixels->setPixelColor(i, 0);
@@ -245,6 +248,15 @@ void loop() {
       analogWrite(D2, PWM_MAXVALUE-mPwmFadingCount); 
       if ((millis() % 100)  == 0) {
         mPwmFadingCount--;
+      }
+    }
+  } else {
+    /* something from Mqtt will fade in */
+    if (mColorFadingCount <= FADE_MAXVALUE) {
+      if ((millis() % 100)  == 0) {
+        mColorFadingCount++;
+        pPixels->setBrightness(mColorFadingCount);
+        pPixels->show();
       }
     }
   }
