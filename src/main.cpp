@@ -34,6 +34,7 @@ unsigned int mButtonPressingCount = 0;        /**< Delay before everything is re
 unsigned int mPwmFadingCount = PWM_MAXVALUE;  /**< Used for fading white LED */
 unsigned int mColorFadingCount = FADE_MAXVALUE;
 bool mLastMotion=false;
+unsigned long mShutoffAfterMotion = TIME_UNDEFINED;     /**< Time, when LED has to be deactivated after motion */
 
 void onHomieEvent(const HomieEvent &event)
 {
@@ -51,6 +52,11 @@ void onHomieEvent(const HomieEvent &event)
 }
 
 void loopHandler() {
+  // always shutdown LED after controller was started
+  if (mShutoffAfterMotion == TIME_UNDEFINED) {
+    mShutoffAfterMotion = millis() + (minimumActivation.get() * 1000);
+  }
+
   // Handle motion sensor
   if (mLastMotion != digitalRead(GPIO_PIR)) {
     // Read the current time
@@ -61,33 +67,36 @@ void loopHandler() {
     // Update the motion state
     mLastMotion = digitalRead(GPIO_PIR);
 
+    Serial << "Fade" << mColorFadingCount << " Time: " << millis() << " finished: " << mShutoffAfterMotion << "\t";
     Serial << "Motion: " << mLastMotion << " at " << (1900 + tm.tm_year) << "-" << (tm.tm_mon + 1) << "-" << tm.tm_mday << " " << tm.tm_hour << ":" << tm.tm_min << ":" << tm.tm_sec << endl;
     monitor.setProperty("motion").send(String(mLastMotion ? "true" : "false"));
-
-    /* Tetermine color according to time (night / day) */
-    //FIXME: extractColor(candidate, strlen(candidate))
 
     if (tm.tm_year < 100){ /* < 2000 as tm_year + 1900 is the year */
       return;
     }
 
-    uint32_t color = extractColor(dayColor.get(), strlen(dayColor.get()) );
-    if ((nightStartHour.get() <= tm.tm_hour) || (tm.tm_hour <= nightEndHour.get()) ) {
-        color = extractColor(nightColor.get(), strlen(nightColor.get()) );
-    }
-
+    
     somethingReceived = true;
-    /* Set everything to red on start */
-    for( int i = 0; i < ledAmount.get(); i++ ) {
-        if (mLastMotion) {
-          mColorFadingCount = 1;
-          pPixels->setBrightness(mColorFadingCount);
-          pPixels->setPixelColor(i, color);
-        } else {
-          pPixels->setPixelColor(i, 0);
-        }
+
+    if (mLastMotion == HIGH) {
+      // FIXME check, if dayColor or nightcolor has the value "Decativated"
+      uint32_t color = extractColor(dayColor.get(), strlen(dayColor.get()) );
+      if ((nightStartHour.get() <= tm.tm_hour) || (tm.tm_hour <= nightEndHour.get()) ) {
+          color = extractColor(nightColor.get(), strlen(nightColor.get()) );
+      }
+
+      /* Activate everything, if not already on */
+      if (millis() > mShutoffAfterMotion) {
+        mColorFadingCount = 1;
+      }
+      for( int i = 0; i < ledAmount.get(); i++ ) {
+        pPixels->setBrightness(mColorFadingCount);
+        pPixels->setPixelColor(i, color);
+      }
+      pPixels->show();
+
+      mShutoffAfterMotion = millis() + (minimumActivation.get() * 1000);
     }
-    pPixels->show();
   }
 
   // Feed the dog -> ESP stay alive
@@ -199,7 +208,7 @@ void setup() {
   nightEndHour.setDefaultValue(6).setValidator([] (long candidate) {
     return (candidate >= 0) && (candidate < 24);
   });
-  minimumActivation.setDefaultValue(1).setValidator([] (long candidate) {
+  minimumActivation.setDefaultValue(30).setValidator([] (long candidate) {
     return (candidate >= 0) && (candidate < 1000);
   });
   ntpServer.setDefaultValue("pool.ntp.org");
@@ -226,6 +235,7 @@ void setup() {
 
 void loop() {
   Homie.loop();
+  /* Chip is not configured */
   if (!mHomieConfigured) {
     if ( ((millis() - mLastLedChanges) >= BLINK_INTERVAL) ||
         (mLastLedChanges == 0) ) {
@@ -241,6 +251,7 @@ void loop() {
       mLastLedChanges = millis();    
     }
 
+  /* No input, chip is in IDLE mode */
   } else if (!somethingReceived) {
     static uint8_t position = 0;
     if ( ((millis() - mLastLedChanges) >= 20) ||
@@ -255,13 +266,30 @@ void loop() {
         mPwmFadingCount--;
       }
     }
+
+  /* the chip has to do something with color */
   } else {
-    /* something from Mqtt will fade in */
-    if (mColorFadingCount <= FADE_MAXVALUE) {
-      if ((millis() % 100)  == 0) {
-        mColorFadingCount++;
-        pPixels->setBrightness(mColorFadingCount);
+    if (millis() < mShutoffAfterMotion) {
+      if (mColorFadingCount < FADE_MAXVALUE) {
+        if ((millis() % 100)  == 0) {
+          mColorFadingCount++;
+          pPixels->setBrightness(mColorFadingCount);
+        }
         pPixels->show();
+      }
+    } else {
+      /* something from Mqtt will fade in */
+      if (mColorFadingCount <= FADE_MAXVALUE) {
+        if ((millis() % 100)  == 0) {
+          mColorFadingCount++;
+          pPixels->setBrightness(mColorFadingCount);
+          pPixels->show();
+        }
+      } else {
+        for( int i = 0; i < ledAmount.get(); i++ ) {
+            pPixels->setPixelColor(i, 0);
+        }
+        mColorFadingCount = 0;
       }
     }
   }

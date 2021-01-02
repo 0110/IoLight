@@ -17,6 +17,7 @@
 #define PWM_MAXVALUE    1023
 #define FADE_MAXVALUE   255
 
+#define TIME_UNDEFINED  0xFFFFFFFFU
 
 #define GPIO_BUTTON     D0
 #define GPIO_WS2812     D1
