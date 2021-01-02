@@ -17,6 +17,12 @@
 #define PWM_MAXVALUE    1023
 #define FADE_MAXVALUE   255
 
+
+#define GPIO_BUTTON     D0
+#define GPIO_WS2812     D1
+#define GPIO_PIR        D6
+#define GPIO_LED        D2 
+
 HomieSetting<long> ledAmount("leds", "Amount of LEDs (of type WS2812); Range 1 to 2047");
 HomieSetting<bool> motionActivation("motionactivation", "Activate light on motion");
 HomieSetting<const char*> dayColor("dayColor", "color to show at day");

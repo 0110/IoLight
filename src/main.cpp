@@ -52,14 +52,14 @@ void onHomieEvent(const HomieEvent &event)
 
 void loopHandler() {
   // Handle motion sensor
-  if (mLastMotion != digitalRead(D6)) {
+  if (mLastMotion != digitalRead(GPIO_PIR)) {
     // Read the current time
     time_t now; // this is the epoch
     tm tm;      // the structure tm holds time information in a more convient way
     time(&now);
     localtime_r(&now, &tm);
     // Update the motion state
-    mLastMotion = digitalRead(D6);
+    mLastMotion = digitalRead(GPIO_PIR);
 
     Serial << "Motion: " << mLastMotion << " at " << (1900 + tm.tm_year) << "-" << (tm.tm_mon + 1) << "-" << tm.tm_mday << " " << tm.tm_hour << ":" << tm.tm_min << ":" << tm.tm_sec << endl;
     monitor.setProperty("motion").send(String(mLastMotion ? "true" : "false"));
@@ -97,12 +97,12 @@ void loopHandler() {
 bool switchHandler(const HomieRange& range, const String& value) {
   if (range.isRange) return false;  // only one switch is present
   if (value == "off" || value == "Off" || value == "OFF" || value == "false") {
-    analogWrite(D2, 0);
+    analogWrite(GPIO_LED, 0);
   } else if (value == "on" || value == "On" || value == "ON" || value == "true") {
-    analogWrite(D2, PWM_MAXVALUE);
+    analogWrite(GPIO_LED, PWM_MAXVALUE);
   } else if ( value.length() > 0 && isDigit(value.charAt(0))  ) {
       Serial << "MQTT | Dimm to " << value.toInt() << "%" << endl;
-      analogWrite(D2, (value.toInt() * PWM_MAXVALUE) / 100);
+      analogWrite(GPIO_LED, (value.toInt() * PWM_MAXVALUE) / 100);
   } else {
     Serial << "MQTT | Unkown Command " << value << endl;
   }
@@ -205,7 +205,7 @@ void setup() {
   ntpServer.setDefaultValue("pool.ntp.org");
 
 
-  pPixels = new Adafruit_NeoPixel(ledAmount.get(), D1, NEO_GRB + NEO_KHZ800);
+  pPixels = new Adafruit_NeoPixel(ledAmount.get(), GPIO_WS2812, NEO_GRB + NEO_KHZ800);
 
   pPixels->begin();
   pPixels->clear();
@@ -218,10 +218,10 @@ void setup() {
 
   Homie.setup();
   mHomieConfigured = Homie.isConfigured();
-  pinMode(D0, INPUT); // GPIO0 as input
-  pinMode(D6, INPUT);
-  pinMode(D2, OUTPUT); // PWM Pin for white LED
-  analogWrite(D2, 0); // activate LED with 0%
+  pinMode(GPIO_BUTTON, INPUT); // GPIO0 as input
+  pinMode(GPIO_PIR, INPUT);
+  pinMode(GPIO_LED, OUTPUT); // PWM Pin for white LED
+  analogWrite(GPIO_LED, 0); // activate LED with 0%
 }
 
 void loop() {
@@ -250,7 +250,7 @@ void loop() {
     }
     /* Fade in the white light after booting up to 100% */
     if (mPwmFadingCount > 0) {
-      analogWrite(D2, PWM_MAXVALUE-mPwmFadingCount); 
+      analogWrite(GPIO_LED, PWM_MAXVALUE-mPwmFadingCount); 
       if ((millis() % 100)  == 0) {
         mPwmFadingCount--;
       }
@@ -267,7 +267,7 @@ void loop() {
   }
 
   // Use Flash button to reset configuration
-  if (digitalRead(D0) == HIGH) {
+  if (digitalRead(GPIO_BUTTON) == HIGH) {
     if (Homie.isConfigured()) {
       if (mButtonPressingCount > RESET_TRIGGER) {
         /* shutoff the LEDs */
