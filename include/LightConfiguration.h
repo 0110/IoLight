@@ -19,13 +19,13 @@
 
 #define TIME_UNDEFINED  0xFFFFFFFFU
 
-#define GPIO_BUTTON     D0
-#define GPIO_WS2812     D1
-#define GPIO_PIR        D6
-#define GPIO_LED        D2 
+#define GPIO_BUTTON     D0  /**< Input button */
+#define GPIO_WS2812     D1  /**< RGB LEDs */
+#define GPIO_PIR        D6  /**< Passive infrared sensor */
+#define GPIO_LED        D2  /**< None RGB light, controlled by mosfet */
 
 HomieSetting<long> ledAmount("leds", "Amount of LEDs (of type WS2812); Range 1 to 2047");
-HomieSetting<bool> motionActivation("motionactivation", "Activate light on motion");
+HomieSetting<bool> motionActivation("motionactivation", "Activate light (none RGB) on motion");
 HomieSetting<const char*> dayColor("dayColor", "color to show at day");
 HomieSetting<const char*> nightColor("nightColor", "color to show at night");
 HomieSetting<long> nightStartHour("nightStart", "Hour when night starts (0-23)");
