@@ -21,7 +21,7 @@
 Adafruit_NeoPixel* pPixels = NULL;
 
 HomieNode ledNode("strip", "Strip", "strip", true, 1, NUMBER_LEDS);
-HomieNode oneLedNode /* to rule them all */("led", "Light", "led");
+HomieNode oneLedNode /* to rule them all */("led", "RGB led", "all leds");
 HomieNode lampNode("lamp", "Lamp switch", "White lamp On-Off");
 HomieNode dimmNode("dimm", "Lamp Dimmed", "White lamp can be dimmed");
 HomieNode monitor("monitor", "Monitor motion", "Monigor motion via PIR");
@@ -83,12 +83,16 @@ void loopHandler() {
       uint32_t color = extractColor(dayColor.get(), strlen(dayColor.get()) );
       if ((nightStartHour.get() <= tm.tm_hour) || (tm.tm_hour <= nightEndHour.get()) ) {
           color = extractColor(nightColor.get(), strlen(nightColor.get()) );
+          oneLedNode.setProperty("ambient").send(String(nightColor.get()));
+      } else {
+        oneLedNode.setProperty("ambient").send(String(dayColor.get()));
       }
 
       /* Activate everything, if not already on */
       if (millis() > mShutoffAfterMotion) {
         mColorFadingCount = 1;
       }
+
       for( int i = 0; i < ledAmount.get(); i++ ) {
         pPixels->setBrightness(mColorFadingCount);
         pPixels->setPixelColor(i, color);
@@ -132,11 +136,13 @@ bool allLedsHandler(const HomieRange& range, const String& value) {
   int bright = value.substring(sep2 + 1, value.length()).toInt(); /* brightness (0-100%) */
 
   if (pPixels) {
+    uint8_t c = pPixels->ColorHSV(65535 * hue / 360, 255 * satu / 100, 255 * bright / 100);
     pPixels->clear();  // Initialize all pixels to 'off'
     for( int i = 0; i < ledAmount.get(); i++ ) {
-        pPixels->setPixelColor(i, pPixels->ColorHSV(65535 * hue / 360, 255 * satu / 100, 255 * bright / 100));
+        pPixels->setPixelColor(i, c);
     }
     pPixels->show();   // make sure it is visible
+    oneLedNode.setProperty("ambient").send(String(value));
   }
   return true;
 }
@@ -261,8 +267,10 @@ void loop() {
     }
     /* Fade in the white light after booting up to 100% */
     if (mPwmFadingCount > 0) {
-      analogWrite(GPIO_LED, PWM_MAXVALUE-mPwmFadingCount); 
-      if ((millis() % 100)  == 0) {
+      int pwmVal = PWM_MAXVALUE-mPwmFadingCount;
+      analogWrite(GPIO_LED, pwmVal); 
+      if ((millis() % 50)  == 0) {
+        dimmNode.setProperty("value").send(String(((pwmVal * 100U) / PWM_MAXVALUE)));
         mPwmFadingCount--;
       }
     } else if (millis() >= mShutoffAfterMotion) {
@@ -288,6 +296,14 @@ void loop() {
           pPixels->show();
         }
       } else {
+        /* Update Mqtt */
+        if (mColorFadingCount != 0) {
+          oneLedNode.setProperty("ambient").send("black");
+        }
+        if (analogRead(GPIO_LED) != 0) {
+          dimmNode.setProperty("value").send("0");
+        }
+
         /* Reset colored leds */
         for( int i = 0; i < ledAmount.get(); i++ ) {
             pPixels->setPixelColor(i, 0);
