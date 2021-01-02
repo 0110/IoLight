@@ -91,6 +91,9 @@ void loopHandler() {
       /* Activate everything, if not already on */
       if (millis() > mShutoffAfterMotion) {
         mColorFadingCount = 1;
+        if (motionActivation.get()) {
+          mPwmFadingCount = PWM_MAXVALUE;
+        }
       }
 
       for( int i = 0; i < ledAmount.get(); i++ ) {
@@ -242,6 +245,20 @@ void setup() {
   analogWrite(GPIO_LED, 0); // activate LED with 0%
 }
 
+void updateDimmerGPIO() {
+    /* Fade in the white light after booting up to 100% */
+    if (mPwmFadingCount > 0) {
+      int pwmVal = PWM_MAXVALUE-mPwmFadingCount;
+      analogWrite(GPIO_LED, pwmVal); 
+      if ((millis() % 50)  == 0) {
+        dimmNode.setProperty("value").send(String(((pwmVal * 100U) / PWM_MAXVALUE)));
+        mPwmFadingCount-=2;
+      }
+    } else if (millis() >= mShutoffAfterMotion) {
+        analogWrite(GPIO_LED, 0);
+    }
+}
+
 void loop() {
   Homie.loop();
   /* Chip is not configured */
@@ -268,18 +285,7 @@ void loop() {
       RainbowCycle(pPixels, &position);
       mLastLedChanges = millis();    
     }
-    /* Fade in the white light after booting up to 100% */
-    if (mPwmFadingCount > 0) {
-      int pwmVal = PWM_MAXVALUE-mPwmFadingCount;
-      analogWrite(GPIO_LED, pwmVal); 
-      if ((millis() % 50)  == 0) {
-        dimmNode.setProperty("value").send(String(((pwmVal * 100U) / PWM_MAXVALUE)));
-        mPwmFadingCount-=2;
-      }
-    } else if (millis() >= mShutoffAfterMotion) {
-        analogWrite(GPIO_LED, 0);
-    }
-
+    updateDimmerGPIO();
   /* the chip has to do something with color */
   } else {
     if (millis() < mShutoffAfterMotion) {
@@ -290,6 +296,7 @@ void loop() {
         }
         pPixels->show();
       }
+      updateDimmerGPIO();
     } else {
       /* something from Mqtt will fade in */
       if (mColorFadingCount <= FADE_MAXVALUE) {

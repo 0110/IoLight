@@ -25,7 +25,7 @@
 #define GPIO_LED        D2  /**< None RGB light, controlled by mosfet */
 
 HomieSetting<long> ledAmount("leds", "Amount of LEDs (of type WS2812); Range 1 to 2047");
-HomieSetting<bool> motionActivation("motionactivation", "Activate light (none RGB) on motion");
+HomieSetting<bool> motionActivation("motion", "Activate light (none RGB) on motion");
 HomieSetting<const char*> dayColor("dayColor", "color to show at day");
 HomieSetting<const char*> nightColor("nightColor", "color to show at night");
 HomieSetting<long> nightStartHour("nightStart", "Hour when night starts (0-23)");
