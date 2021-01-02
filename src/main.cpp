@@ -265,6 +265,8 @@ void loop() {
       if ((millis() % 100)  == 0) {
         mPwmFadingCount--;
       }
+    } else if (millis() >= mShutoffAfterMotion) {
+        analogWrite(GPIO_LED, 0);
     }
 
   /* the chip has to do something with color */
@@ -286,10 +288,13 @@ void loop() {
           pPixels->show();
         }
       } else {
+        /* Reset colored leds */
         for( int i = 0; i < ledAmount.get(); i++ ) {
             pPixels->setPixelColor(i, 0);
         }
         mColorFadingCount = 0;
+        /* shutoff normal LED */
+        analogWrite(GPIO_LED, 0);
       }
     }
   }
