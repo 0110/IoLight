@@ -31,7 +31,7 @@ unsigned long mLastLedChanges = 0U;
 bool somethingReceived = false;
 
 unsigned int mButtonPressingCount = 0;        /**< Delay before everything is reset */
-unsigned int mPwmFadingCount = PWM_MAXVALUE;  /**< Used for fading white LED */
+int mPwmFadingCount = PWM_MAXVALUE;           /**< Used for fading white LED */
 unsigned int mColorFadingCount = FADE_MAXVALUE;
 bool mLastMotion=false;
 unsigned long mShutoffAfterMotion = TIME_UNDEFINED;     /**< Time, when LED has to be deactivated after motion */
@@ -111,11 +111,14 @@ bool switchHandler(const HomieRange& range, const String& value) {
   if (range.isRange) return false;  // only one switch is present
   if (value == "off" || value == "Off" || value == "OFF" || value == "false") {
     analogWrite(GPIO_LED, 0);
+    dimmNode.setProperty("value").send(value);
   } else if (value == "on" || value == "On" || value == "ON" || value == "true") {
     analogWrite(GPIO_LED, PWM_MAXVALUE);
+    dimmNode.setProperty("value").send(value);
   } else if ( value.length() > 0 && isDigit(value.charAt(0))  ) {
       Serial << "MQTT | Dimm to " << value.toInt() << "%" << endl;
       analogWrite(GPIO_LED, (value.toInt() * PWM_MAXVALUE) / 100);
+      dimmNode.setProperty("value").send(value);
   } else {
     Serial << "MQTT | Unkown Command " << value << endl;
   }
@@ -271,7 +274,7 @@ void loop() {
       analogWrite(GPIO_LED, pwmVal); 
       if ((millis() % 50)  == 0) {
         dimmNode.setProperty("value").send(String(((pwmVal * 100U) / PWM_MAXVALUE)));
-        mPwmFadingCount--;
+        mPwmFadingCount-=2;
       }
     } else if (millis() >= mShutoffAfterMotion) {
         analogWrite(GPIO_LED, 0);
@@ -290,7 +293,7 @@ void loop() {
     } else {
       /* something from Mqtt will fade in */
       if (mColorFadingCount <= FADE_MAXVALUE) {
-        if ((millis() % 100)  == 0) {
+        if ((millis() % 50)  == 0) {
           mColorFadingCount++;
           pPixels->setBrightness(mColorFadingCount);
           pPixels->show();
