@@ -35,6 +35,7 @@ int mPwmFadingCount = PWM_MAXVALUE;           /**< Used for fading white LED */
 unsigned int mColorFadingCount = FADE_MAXVALUE;
 bool mLastMotion=false;
 unsigned long mShutoffAfterMotion = TIME_UNDEFINED;     /**< Time, when LED has to be deactivated after motion */
+bool mConnected = false;
 
 void onHomieEvent(const HomieEvent &event)
 {
@@ -46,6 +47,7 @@ void onHomieEvent(const HomieEvent &event)
   case HomieEventType::MQTT_READY:
     Serial.printf("NTP Setup with server %s\r\n", ntpServer.get());
     configTime(0, 0, ntpServer.get());
+    mConnected = true;
   default:
     break;
   }
@@ -69,12 +71,11 @@ void loopHandler() {
 
     Serial << "Fade" << mColorFadingCount << " Time: " << millis() << " finished: " << mShutoffAfterMotion << "\t";
     Serial << "Motion: " << mLastMotion << " at " << (1900 + tm.tm_year) << "-" << (tm.tm_mon + 1) << "-" << tm.tm_mday << " " << tm.tm_hour << ":" << tm.tm_min << ":" << tm.tm_sec << endl;
-    monitor.setProperty("motion").send(String(mLastMotion ? "true" : "false"));
-
-    if (tm.tm_year < 100){ /* < 2000 as tm_year + 1900 is the year */
+    
+    if (!mConnected || (tm.tm_year < 100)) { /* < 2000 as tm_year + 1900 is the year */
       return;
     }
-
+    monitor.setProperty("motion").send(String(mLastMotion ? "true" : "false"));
     
     somethingReceived = true;
 
@@ -148,7 +149,9 @@ bool allLedsHandler(const HomieRange& range, const String& value) {
         pPixels->setPixelColor(i, c);
     }
     pPixels->show();   // make sure it is visible
-    oneLedNode.setProperty("ambient").send(String(value));
+    if (mConnected) {
+      oneLedNode.setProperty("ambient").send(String(value));
+    }
   }
   return true;
 }
@@ -207,7 +210,9 @@ void setup() {
   ledAmount.setDefaultValue(NUMBER_LEDS).setValidator([] (long candidate) {
     return (candidate > 0) && (candidate < 2048);
   });
-  motionActivation.setDefaultValue(false);
+  motionActivation.setDefaultValue(false).setValidator([] (int candidate) {
+    return true;
+  });
   dayColor.setDefaultValue("off").setValidator([] (const char *candidate) {
     return extractColor(candidate, strlen(candidate)) != 0xFFFFFFFF;
   });
@@ -251,7 +256,9 @@ void updateDimmerGPIO() {
       int pwmVal = PWM_MAXVALUE-mPwmFadingCount;
       analogWrite(GPIO_LED, pwmVal); 
       if ((millis() % 50)  == 0) {
-        dimmNode.setProperty("value").send(String(((pwmVal * 100U) / PWM_MAXVALUE)));
+        if (mConnected) {
+          dimmNode.setProperty("value").send(String(((pwmVal * 100U) / PWM_MAXVALUE)));
+        }
         mPwmFadingCount-=2;
       }
     } else if (millis() >= mShutoffAfterMotion) {
@@ -307,10 +314,10 @@ void loop() {
         }
       } else {
         /* Update Mqtt */
-        if (mColorFadingCount != 0) {
+        if ((mColorFadingCount != 0) && (mConnected)) {
           oneLedNode.setProperty("ambient").send("black");
         }
-        if (analogRead(GPIO_LED) != 0) {
+        if ((analogRead(GPIO_LED) != 0) && (mConnected)) {
           dimmNode.setProperty("value").send("0");
         }
 
