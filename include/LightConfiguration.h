@@ -8,7 +8,7 @@
 #define LIGHT_CONFIGURATION_H
 
 
-#define FIRMWARE_VERSION "0.2.1"
+#define FIRMWARE_VERSION "0.3.1"
 
 #define NUMBER_LEDS 6
 
@@ -28,6 +28,8 @@ HomieSetting<long> ledAmount("leds", "Amount of LEDs (of type WS2812); Range 1 t
 HomieSetting<bool> motionActivation("motion", "Activate light (none RGB) on motion");
 HomieSetting<const char*> dayColor("dayColor", "color to show at day");
 HomieSetting<const char*> nightColor("nightColor", "color to show at night");
+HomieSetting<long> dayPercent("dayPerc", "dim white light to x% at day");
+HomieSetting<long> nightPercent("nightPerc", "dim white light to x% at night");
 HomieSetting<long> nightStartHour("nightStart", "Hour when night starts (0-23)");
 HomieSetting<long> nightEndHour("nightEnd", "Hour when night ends (0-23)");
 HomieSetting<long> minimumActivation("minimumAct", "Activation in seconds (1-999)");

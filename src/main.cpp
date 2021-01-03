@@ -32,6 +32,7 @@ bool somethingReceived = false;
 
 unsigned int mButtonPressingCount = 0;        /**< Delay before everything is reset */
 int mPwmFadingCount = PWM_MAXVALUE;           /**< Used for fading white LED */
+int mPwmFadingFinish = 0;
 unsigned int mColorFadingCount = FADE_MAXVALUE;
 bool mLastMotion=false;
 unsigned long mShutoffAfterMotion = TIME_UNDEFINED;     /**< Time, when LED has to be deactivated after motion */
@@ -82,8 +83,10 @@ void loopHandler() {
     if (mLastMotion == HIGH) {
       // FIXME check, if dayColor or nightcolor has the value "Decativated"
       uint32_t color = extractColor(dayColor.get(), strlen(dayColor.get()) );
+      int maxPercent = dayPercent.get();
       if ((nightStartHour.get() <= tm.tm_hour) || (tm.tm_hour <= nightEndHour.get()) ) {
           color = extractColor(nightColor.get(), strlen(nightColor.get()) );
+          maxPercent = nightPercent.get();
           oneLedNode.setProperty("ambient").send(String(nightColor.get()));
       } else {
         oneLedNode.setProperty("ambient").send(String(dayColor.get()));
@@ -94,6 +97,8 @@ void loopHandler() {
         mColorFadingCount = 1;
         if (motionActivation.get()) {
           mPwmFadingCount = PWM_MAXVALUE;
+          mPwmFadingFinish = (PWM_MAXVALUE * (100-maxPercent)) / 100;
+          Serial << "PWM starts " << mPwmFadingCount << " and ends : " << mPwmFadingFinish << endl;
         }
       }
 
@@ -219,6 +224,12 @@ void setup() {
   nightColor.setDefaultValue("red").setValidator([] (const char *candidate) {
     return extractColor(candidate, strlen(candidate)) != 0xFFFFFFFF;
   });
+  dayPercent.setDefaultValue(100).setValidator([] (long candidate) {
+    return (candidate > 0) && (candidate <= 100);
+  });
+  nightPercent.setDefaultValue(25).setValidator([] (long candidate) {
+    return (candidate > 0) && (candidate <= 100);
+  });
   nightStartHour.setDefaultValue(22).setValidator([] (long candidate) {
     return (candidate >= 0) && (candidate < 24);
   });
@@ -253,7 +264,7 @@ void setup() {
 void updateDimmerGPIO() {
     static int oddCalled = 0;
     /* Fade in the white light after booting up to 100% */
-    if (mPwmFadingCount > 0) {
+    if (mPwmFadingCount > mPwmFadingFinish) {
       int pwmVal = PWM_MAXVALUE-mPwmFadingCount;
       analogWrite(GPIO_LED, pwmVal); 
         if (oddCalled && mConnected) {
