@@ -77,7 +77,7 @@ void loopHandler() {
     }
     monitor.setProperty("motion").send(String(mLastMotion ? "true" : "false"));
     
-    somethingReceived = true;
+    somethingReceived = true; // Stop the animation, as a montion was detected */
 
     if (mLastMotion == HIGH) {
       // FIXME check, if dayColor or nightcolor has the value "Decativated"
@@ -255,11 +255,11 @@ void updateDimmerGPIO() {
     if (mPwmFadingCount > 0) {
       int pwmVal = PWM_MAXVALUE-mPwmFadingCount;
       analogWrite(GPIO_LED, pwmVal); 
-      if ((millis() % 50)  == 0) {
+      if ((millis() % 1000)  == 0) {
         if (mConnected) {
           dimmNode.setProperty("value").send(String(((pwmVal * 100U) / PWM_MAXVALUE)));
         }
-        mPwmFadingCount-=2;
+        mPwmFadingCount-=20;
       }
     } else if (millis() >= mShutoffAfterMotion) {
         analogWrite(GPIO_LED, 0);
