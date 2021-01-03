@@ -251,16 +251,16 @@ void setup() {
 }
 
 void updateDimmerGPIO() {
+    static int oddCalled = 0;
     /* Fade in the white light after booting up to 100% */
     if (mPwmFadingCount > 0) {
       int pwmVal = PWM_MAXVALUE-mPwmFadingCount;
       analogWrite(GPIO_LED, pwmVal); 
-      if ((millis() % 1000)  == 0) {
-        if (mConnected) {
+        if (oddCalled && mConnected) {
           dimmNode.setProperty("value").send(String(((pwmVal * 100U) / PWM_MAXVALUE)));
         }
         mPwmFadingCount-=20;
-      }
+        oddCalled = (oddCalled + 1) % 2;
     } else if (millis() >= mShutoffAfterMotion) {
         analogWrite(GPIO_LED, 0);
     }
@@ -290,20 +290,21 @@ void loop() {
     if ( ((millis() - mLastLedChanges) >= 20) ||
         (mLastLedChanges == 0) ) {
       RainbowCycle(pPixels, &position);
-      mLastLedChanges = millis();    
+      updateDimmerGPIO();
+      mLastLedChanges = millis();
     }
-    updateDimmerGPIO();
   /* the chip has to do something with color */
   } else {
     if (millis() < mShutoffAfterMotion) {
-      if (mColorFadingCount < FADE_MAXVALUE) {
-        if ((millis() % 100)  == 0) {
-          mColorFadingCount++;
+      if ((millis() - mLastLedChanges) >= 100) {
+        if (mColorFadingCount < FADE_MAXVALUE) {
+          mColorFadingCount+=2;
           pPixels->setBrightness(mColorFadingCount);
+          pPixels->show();
         }
-        pPixels->show();
+        updateDimmerGPIO();
+        mLastLedChanges = millis();
       }
-      updateDimmerGPIO();
     } else {
       /* something from Mqtt will fade in */
       if (mColorFadingCount <= FADE_MAXVALUE) {
