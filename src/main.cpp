@@ -129,7 +129,7 @@ bool switchHandler(const HomieRange& range, const String& value) {
       analogWrite(GPIO_LED, (value.toInt() * PWM_MAXVALUE) / 100);
       dimmNode.setProperty("value").send(value);
   } else {
-    Serial << "MQTT | Unkown Command " << value << endl;
+    Serial << "MQTT | Unknown Command " << value << endl;
   }
   somethingReceived = true; // Stop animation
   return true;

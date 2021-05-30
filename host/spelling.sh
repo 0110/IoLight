@@ -5,6 +5,6 @@ if [ $? -ne 0 ]; then
 	echo "codespell needs to be installed"
 	exit 1
 fi
-codespell ../src/*
-codespell ../include/*
+codespell -w ../src/*
+codespell -w ../include/*
 exit 0
