@@ -274,6 +274,10 @@ void updateDimmerGPIO() {
         oddCalled = (oddCalled + 1) % 2;
     } else if (millis() >= mShutoffAfterMotion) {
         analogWrite(GPIO_LED, 0);
+        dimmNode.setProperty("value").send(String("0"));
+        pPixels->clear();
+        pPixels->show();
+        mShutoffAfterMotion = TIME_UNDEFINED;
     }
 }
 
