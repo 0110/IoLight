@@ -99,7 +99,7 @@ void loopHandler() {
     mLastMotion = digitalRead(GPIO_PIR);
     log(LEVEL_MOTION_DETECTED, 
       String("Fade" + String(mColorFadingCount) + " Time: " + millis() + " finished: " + String(mShutoffAfterMotion) + 
-            "\tMotion: " + String(mLastMotion) + " at " + String(1900 + tm.tm_year) + "-" + String(tm.tm_mon + 1) + "-" + String(tm.tm_mday) +
+            ";Motion: " + String(mLastMotion) + " at " + String(1900 + tm.tm_year) + "-" + String(tm.tm_mon + 1) + "-" + String(tm.tm_mday) +
             " " + String(tm.tm_hour) + ":" + String(tm.tm_min) + ":" + String(tm.tm_sec)), STATUS_MOTION_DETECTED);
     
     if (!mConnected || (tm.tm_year < 100)) { /* < 2000 as tm_year + 1900 is the year */
