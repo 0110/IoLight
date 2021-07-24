@@ -8,7 +8,7 @@
 #define LIGHT_CONFIGURATION_H
 
 
-#define FIRMWARE_VERSION "0.3.2"
+#define FIRMWARE_VERSION "0.4.0"
 
 #define NUMBER_LEDS 6
 
@@ -23,6 +23,14 @@
 #define GPIO_WS2812     D1  /**< RGB LEDs */
 #define GPIO_PIR        D6  /**< Passive infrared sensor */
 #define GPIO_LED        D2  /**< None RGB light, controlled by mosfet */
+
+
+#define LEVEL_MOTION_DETECTED   1
+#define LEVEL_PWMSTARTS         1
+#define LEVEL_UNKOWN_CMD        100
+#define STATUS_MOTION_DETECTED  1000
+#define STATUS_PWM_STARTS       1001
+#define STATUS_UNKNOWN_CMD      9000
 
 HomieSetting<long> ledAmount("leds", "Amount of LEDs (of type WS2812); Range 1 to 2047");
 HomieSetting<bool> motionActivation("motion", "Activate light (none RGB) on motion");

@@ -18,6 +18,28 @@
 #include "ColorUtil.h"
 #include <time.h>  
 
+/******************************************************************************
+ *                                     DEFINES
+ ******************************************************************************/
+
+#define LOG_TOPIC "log\0"
+
+#define getTopic(test, topic)                                                                                                                 \
+  char *topic = new char[strlen(Homie.getConfiguration().mqtt.baseTopic) + strlen(Homie.getConfiguration().deviceId) + 1 + strlen(test) + 1]; \
+  strcpy(topic, Homie.getConfiguration().mqtt.baseTopic);                                                                                     \
+  strcat(topic, Homie.getConfiguration().deviceId);                                                                                           \
+  strcat(topic, "/");                                                                                                                         \
+  strcat(topic, test);
+
+/******************************************************************************
+ *                            FUNCTION PROTOTYPES
+ ******************************************************************************/
+
+void log(int level, String message, int code);
+
+/******************************************************************************
+ *                            LOCAL VARIABLES
+ ******************************************************************************/
 Adafruit_NeoPixel* pPixels = NULL;
 
 HomieNode ledNode("strip", "Strip", "strip", true, 1, NUMBER_LEDS);
@@ -37,6 +59,11 @@ unsigned int mColorFadingCount = FADE_MAXVALUE;
 bool mLastMotion=false;
 unsigned long mShutoffAfterMotion = TIME_UNDEFINED;     /**< Time, when LED has to be deactivated after motion */
 bool mConnected = false;
+
+/******************************************************************************
+ *                            LOCAL FUNCTIONS
+ ******************************************************************************/
+
 
 void onHomieEvent(const HomieEvent &event)
 {
@@ -69,9 +96,10 @@ void loopHandler() {
     localtime_r(&now, &tm);
     // Update the motion state
     mLastMotion = digitalRead(GPIO_PIR);
-
-    Serial << "Fade" << mColorFadingCount << " Time: " << millis() << " finished: " << mShutoffAfterMotion << "\t";
-    Serial << "Motion: " << mLastMotion << " at " << (1900 + tm.tm_year) << "-" << (tm.tm_mon + 1) << "-" << tm.tm_mday << " " << tm.tm_hour << ":" << tm.tm_min << ":" << tm.tm_sec << endl;
+    log(LEVEL_MOTION_DETECTED, 
+      String("Fade" + String(mColorFadingCount) + " Time: " + millis() + " finished: " + String(mShutoffAfterMotion) + 
+            "\tMotion: " + String(mLastMotion) + " at " + String(1900 + tm.tm_year) + "-" + String(tm.tm_mon + 1) + "-" + String(tm.tm_mday) +
+            " " + String(tm.tm_hour) + ":" + String(tm.tm_min) + ":" + String(tm.tm_sec)), STATUS_MOTION_DETECTED);
     
     if (!mConnected || (tm.tm_year < 100)) { /* < 2000 as tm_year + 1900 is the year */
       return;
@@ -98,7 +126,7 @@ void loopHandler() {
         if (motionActivation.get()) {
           mPwmFadingCount = PWM_MAXVALUE;
           mPwmFadingFinish = (PWM_MAXVALUE * (100-maxPercent)) / 100;
-          Serial << "PWM starts " << mPwmFadingCount << " and ends : " << mPwmFadingFinish << endl;
+          log(LEVEL_PWMSTARTS,String("PWM starts " + String(mPwmFadingCount) + " and ends : " + String(mPwmFadingFinish)), STATUS_PWM_STARTS);
         }
       }
 
@@ -129,7 +157,7 @@ bool switchHandler(const HomieRange& range, const String& value) {
       analogWrite(GPIO_LED, (value.toInt() * PWM_MAXVALUE) / 100);
       dimmNode.setProperty("value").send(value);
   } else {
-    Serial << "MQTT | Unknown Command " << value << endl;
+    log(LEVEL_UNKOWN_CMD, String(value), STATUS_UNKNOWN_CMD);
   }
   somethingReceived = true; // Stop animation
   return true;
@@ -382,4 +410,25 @@ void loop() {
   }
 
 }
+
+void log(int level, String message, int statusCode)
+{
+  String buffer;
+  StaticJsonDocument<200> doc;
+  doc["level"] = level;
+  doc["message"] = message;
+  doc["statusCode"] = statusCode;
+  serializeJson(doc, buffer);
+  if (mConnected)
+  {
+    getTopic(LOG_TOPIC, logTopic)
+        Homie.getMqttClient()
+            .subscribe(logTopic, 2);
+
+    Homie.getMqttClient().publish(logTopic, 2, false, buffer.c_str());
+    delete logTopic;
+  }
+  Serial << statusCode << "@" << level << " : " << message << endl;
+}
+
 #endif
