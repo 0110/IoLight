@@ -27,9 +27,13 @@
 
 #define LEVEL_MOTION_DETECTED   1
 #define LEVEL_PWMSTARTS         1
+#define LEVEL_PWM_INITIAL       1
+#define LEVEL_PWM_RETRIGGER     1
 #define LEVEL_UNKOWN_CMD        100
 #define STATUS_MOTION_DETECTED  1000
 #define STATUS_PWM_STARTS       1001
+#define STATUS_PWM_INITIAL      1002
+#define STATUS_PWM_RETRIGGER    1003
 #define STATUS_UNKNOWN_CMD      9000
 
 HomieSetting<long> ledAmount("leds", "Amount of LEDs (of type WS2812); Range 1 to 2047");

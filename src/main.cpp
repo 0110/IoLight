@@ -85,6 +85,7 @@ void loopHandler() {
   // always shutdown LED after controller was started
   if (mShutoffAfterMotion == TIME_UNDEFINED) {
     mShutoffAfterMotion = millis() + (minimumActivation.get() * 1000);
+    log(LEVEL_PWM_INITIAL,String("Finish initial start: " + String(mShutoffAfterMotion)), STATUS_PWM_INITIAL);
   }
 
   // Handle motion sensor
@@ -121,7 +122,7 @@ void loopHandler() {
       }
 
       /* Activate everything, if not already on */
-      if (millis() > mShutoffAfterMotion) {
+      if (millis() < mShutoffAfterMotion) {
         mColorFadingCount = 1;
         if (motionActivation.get()) {
           mPwmFadingCount = PWM_MAXVALUE;
@@ -137,6 +138,7 @@ void loopHandler() {
       pPixels->show();
 
       mShutoffAfterMotion = millis() + (minimumActivation.get() * 1000);
+      log(LEVEL_PWM_RETRIGGER,String("Update " + String(mShutoffAfterMotion) + " at " + String(millis())), STATUS_PWM_RETRIGGER);
     }
   }
 
@@ -305,7 +307,6 @@ void updateDimmerGPIO() {
         dimmNode.setProperty("value").send(String("0"));
         pPixels->clear();
         pPixels->show();
-        mShutoffAfterMotion = TIME_UNDEFINED;
     }
 }
 
