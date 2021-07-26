@@ -377,6 +377,33 @@ void loop() {
     }
   }
 
+  // check serial
+  if (Serial.available()) {
+    int c = Serial.read();
+    switch (c)
+    {
+    case 'c':
+      if (Homie.isConfigured()) {
+        if (SPIFFS.exists ("/homie/config.json") ) 
+        { 
+          Serial << "Delete Configuration" << endl;
+          SPIFFS.remove("/homie/config.json");
+        }
+      } else {
+        Serial.println("Clear config not possible");
+      }
+      break;
+    
+    default:
+      Serial.print("Unkown command: ");
+      Serial.println((char) c);
+      Serial.println("Usage: ");
+      Serial.println("c - clear homie configuration");
+      break;
+    }
+
+  }
+
   // Use Flash button to reset configuration
   if (digitalRead(GPIO_BUTTON) == HIGH) {
     if (Homie.isConfigured()) {
@@ -423,8 +450,6 @@ void log(int level, String message, int statusCode)
   if (mConnected)
   {
     getTopic(LOG_TOPIC, logTopic)
-        Homie.getMqttClient()
-            .subscribe(logTopic, 2);
 
     Homie.getMqttClient().publish(logTopic, 2, false, buffer.c_str());
     delete logTopic;
