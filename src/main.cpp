@@ -17,11 +17,15 @@
 #include "LightConfiguration.h"
 #include "ColorUtil.h"
 #include <time.h>  
+#include "DallasTemperature.h"
+#include <OneWire.h>
 
 /******************************************************************************
  *                                     DEFINES
  ******************************************************************************/
-
+#define TEMP_SENSOR_MEASURE_SERIES  5 /**< Maximum resets */
+#define MIN_TEMP_DIFFERENCE   0.1f
+#define NODE_TEMPERATUR "degrees"
 #define LOG_TOPIC "log\0"
 
 #define getTopic(test, topic)                                                                                                                 \
@@ -30,6 +34,11 @@
   strcat(topic, Homie.getConfiguration().deviceId);                                                                                           \
   strcat(topic, "/");                                                                                                                         \
   strcat(topic, test);
+
+/******************************************************************************
+ *                                     MACROS
+ ******************************************************************************/
+#define DIFFERENCE(a,b)   ( ((a) > (b)) ? ((a) - (b)) : ((b) - (a)) )
 
 /******************************************************************************
  *                            FUNCTION PROTOTYPES
@@ -41,12 +50,16 @@ void log(int level, String message, int code);
  *                            LOCAL VARIABLES
  ******************************************************************************/
 Adafruit_NeoPixel* pPixels = NULL;
+OneWire oneWire(GPIO_DS18B20);
+DallasTemperature sensors(&oneWire);
+float mLastTemperatur = -10.0f;
 
 HomieNode ledNode("strip", "Strip", "strip", true, 1, NUMBER_LEDS);
 HomieNode oneLedNode /* to rule them all */("led", "RGB led", "all leds");
 HomieNode lampNode("lamp", "Lamp switch", "White lamp On-Off");
 HomieNode dimmNode("dimm", "Lamp Dimmed", "White lamp can be dimmed");
 HomieNode monitor("monitor", "Monitor motion", "Monigor motion via PIR");
+HomieNode temperatureNode("temperatur", "Temparture", "inside case");
 
 bool mHomieConfigured = false;
 unsigned long mLastLedChanges = 0U;
@@ -63,7 +76,6 @@ bool mConnected = false;
 /******************************************************************************
  *                            LOCAL FUNCTIONS
  ******************************************************************************/
-
 
 void onHomieEvent(const HomieEvent &event)
 {
@@ -140,6 +152,21 @@ void loopHandler() {
       mShutoffAfterMotion = millis() + (minimumActivation.get() * 1000);
       log(LEVEL_PWM_RETRIGGER,String("Update " + String(mShutoffAfterMotion) + " at " + String(millis())), STATUS_PWM_RETRIGGER);
     }
+  }
+
+  if (oneWireSensorAvail.get()) {
+      int sensorCount = sensors.getDeviceCount();
+      if (sensorCount > 0)
+      {
+        sensors.requestTemperatures();
+        float temp1Raw = sensors.getTempCByIndex(0);
+        float change = DIFFERENCE(temp1Raw, mLastTemperatur);
+        if (change > MIN_TEMP_DIFFERENCE) {
+          temperatureNode.setProperty(NODE_TEMPERATUR).send(String(temp1Raw));
+          Serial << "Temp: " << temp1Raw << endl;
+          mLastTemperatur=temp1Raw;
+        }
+      }
   }
 
   // Feed the dog -> ESP stay alive
@@ -226,19 +253,22 @@ void setup() {
   Homie_setFirmware("light", FIRMWARE_VERSION);
   Homie.setLoopFunction(loopHandler);
   Homie.onEvent(onHomieEvent);
-  ledNode.advertise("led").setName("Each Leds").setDatatype("color").setUnit("rgb")
+  ledNode.advertise("led").setName("Each Leds").setDatatype("Colour").setUnit("rgb")
                             .settable(lightOnHandler);
-  monitor.advertise("motion").setName("Monitor motion").setDatatype("boolean");
+  monitor.advertise("motion").setName("Monitor motion").setDatatype("Boolean");
   oneLedNode.advertise("ambient").setName("All Leds")
-                            .setDatatype("color").setUnit("rgb")
+                            .setDatatype("Colour").setUnit("rgb")
                             .settable(allLedsHandler);
   lampNode.advertise("value").setName("Value")
-                                      .setDatatype("boolean")
+                                      .setDatatype("Boolean")
                                       .settable(switchHandler);
   dimmNode.advertise("value").setName("Dimmer")
-                                      .setDatatype("integer")
+                                      .setDatatype("Integer")
                                       .setUnit("%")
                                       .settable(switchHandler);
+  temperatureNode.advertise(NODE_TEMPERATUR).setName("Degrees")
+                                      .setDatatype("Float")
+                                      .setUnit("ºC");                                      
 
 
   // Load the settings and  set default values
@@ -289,6 +319,15 @@ void setup() {
   pinMode(GPIO_PIR, INPUT);
   pinMode(GPIO_LED, OUTPUT); // PWM Pin for white LED
   analogWrite(GPIO_LED, 0); // activate LED with 0%
+
+  if (oneWireSensorAvail.get()) {
+    sensors.begin();
+          for(int j=0; j < TEMP_SENSOR_MEASURE_SERIES && sensors.getDeviceCount() == 0; j++) {
+        delay(100);
+        sensors.begin();
+        Serial << "Reset 1-Wire Bus" << endl;
+      }
+  }
 }
 
 void updateDimmerGPIO() {

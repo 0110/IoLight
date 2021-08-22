@@ -8,7 +8,7 @@
 #define LIGHT_CONFIGURATION_H
 
 
-#define FIRMWARE_VERSION "0.4.0"
+#define FIRMWARE_VERSION "0.5.0"
 
 #define NUMBER_LEDS 6
 
@@ -23,7 +23,7 @@
 #define GPIO_WS2812     D1  /**< RGB LEDs */
 #define GPIO_PIR        D6  /**< Passive infrared sensor */
 #define GPIO_LED        D2  /**< None RGB light, controlled by mosfet */
-
+#define GPIO_DS18B20    D7  /**< One-Wire used for Dallas temperature sensor */
 
 #define LEVEL_MOTION_DETECTED   1
 #define LEVEL_PWMSTARTS         1
@@ -46,5 +46,6 @@ HomieSetting<long> nightStartHour("nightStart", "Hour when night starts (0-23)")
 HomieSetting<long> nightEndHour("nightEnd", "Hour when night ends (0-23)");
 HomieSetting<long> minimumActivation("minimumAct", "Activation in seconds (1-999)");
 HomieSetting<const char *> ntpServer("ntpServer", "NTP server (pool.ntp.org as default)");
+HomieSetting<bool> oneWireSensorAvail("oneWire", "One wire Bus installed at D7 (disabled as default)");
 
 #endif /*  LIGHT_CONFIGURATION_H */
