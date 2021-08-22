@@ -37,11 +37,10 @@
 #define STATUS_UNKNOWN_CMD      9000
 
 HomieSetting<long> ledAmount("leds", "Amount of LEDs (of type WS2812); Range 1 to 2047");
-HomieSetting<bool> motionActivation("motion", "Activate light (none RGB) on motion");
 HomieSetting<const char*> dayColor("dayColor", "color to show at day");
 HomieSetting<const char*> nightColor("nightColor", "color to show at night");
-HomieSetting<long> dayPercent("dayPerc", "dim white light to x% at day");
-HomieSetting<long> nightPercent("nightPerc", "dim white light to x% at night");
+HomieSetting<long> dayPercent("dayPerc", "dim white light to x% at day (0: disabled)");
+HomieSetting<long> nightPercent("nightPerc", "dim white light to x% at night (0: disabled)");
 HomieSetting<long> nightStartHour("nightStart", "Hour when night starts (0-23)");
 HomieSetting<long> nightEndHour("nightEnd", "Hour when night ends (0-23)");
 HomieSetting<long> minimumActivation("minimumAct", "Activation in seconds (1-999)");

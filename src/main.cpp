@@ -136,7 +136,7 @@ void loopHandler() {
       /* Activate everything, if not already on */
       if (millis() < mShutoffAfterMotion) {
         mColorFadingCount = 1;
-        if (motionActivation.get()) {
+        if (maxPercent > 0) {
           mPwmFadingCount = PWM_MAXVALUE;
           mPwmFadingFinish = (PWM_MAXVALUE * (100-maxPercent)) / 100;
           log(LEVEL_PWMSTARTS,String("PWM starts " + String(mPwmFadingCount) + " and ends : " + String(mPwmFadingFinish)), STATUS_PWM_STARTS);
@@ -275,20 +275,17 @@ void setup() {
   ledAmount.setDefaultValue(NUMBER_LEDS).setValidator([] (long candidate) {
     return (candidate > 0) && (candidate < 2048);
   });
-  motionActivation.setDefaultValue(false).setValidator([] (int candidate) {
-    return true;
-  });
   dayColor.setDefaultValue("off").setValidator([] (const char *candidate) {
     return extractColor(candidate, strlen(candidate)) != 0xFFFFFFFF;
   });
   nightColor.setDefaultValue("red").setValidator([] (const char *candidate) {
     return extractColor(candidate, strlen(candidate)) != 0xFFFFFFFF;
   });
-  dayPercent.setDefaultValue(100).setValidator([] (long candidate) {
-    return (candidate > 0) && (candidate <= 100);
+  dayPercent.setDefaultValue(0).setValidator([] (long candidate) {
+    return (candidate >= 0) && (candidate <= 100);
   });
-  nightPercent.setDefaultValue(25).setValidator([] (long candidate) {
-    return (candidate > 0) && (candidate <= 100);
+  nightPercent.setDefaultValue(0).setValidator([] (long candidate) {
+    return (candidate >= 0) && (candidate <= 100);
   });
   nightStartHour.setDefaultValue(22).setValidator([] (long candidate) {
     return (candidate >= 0) && (candidate < 24);
@@ -300,7 +297,9 @@ void setup() {
     return (candidate >= 0) && (candidate < 1000);
   });
   ntpServer.setDefaultValue("pool.ntp.org");
-
+  oneWireSensorAvail.setDefaultValue(false).setValidator([] (int candidate) {
+    return true;
+  });
 
   pPixels = new Adafruit_NeoPixel(ledAmount.get(), GPIO_WS2812, NEO_GRB + NEO_KHZ800);
 
