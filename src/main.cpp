@@ -147,7 +147,6 @@ void loopHandler() {
         pPixels->setBrightness(mColorFadingCount);
         pPixels->setPixelColor(i, color);
       }
-      pPixels->show();
 
       mShutoffAfterMotion = millis() + (minimumActivation.get() * 1000);
       log(LEVEL_PWM_RETRIGGER,String("Update " + String(mShutoffAfterMotion) + " at " + String(millis())), STATUS_PWM_RETRIGGER);
@@ -301,6 +300,9 @@ void setup() {
     return true;
   });
 
+  Homie.setup();
+  mHomieConfigured = Homie.isConfigured();
+
   pPixels = new Adafruit_NeoPixel(ledAmount.get(), GPIO_WS2812, NEO_GRB + NEO_KHZ800);
 
   pPixels->begin();
@@ -311,9 +313,8 @@ void setup() {
       pPixels->setPixelColor(i, 0 /*red */, 20 /* green */, 0 /* blue */);
   }
   pPixels->show();
+  Serial << "WS2812 Strip initialized with " << (ledAmount.get()) << " leds" << endl;
 
-  Homie.setup();
-  mHomieConfigured = Homie.isConfigured();
   pinMode(GPIO_BUTTON, INPUT); // GPIO0 as input
   pinMode(GPIO_PIR, INPUT);
   pinMode(GPIO_LED, OUTPUT); // PWM Pin for white LED
@@ -377,41 +378,40 @@ void loop() {
     }
   /* the chip has to do something with color */
   } else {
-    if (millis() < mShutoffAfterMotion) {
-      if ((millis() - mLastLedChanges) >= 100) {
+    if ((millis() - mLastLedChanges) >= 100) {
+      if (millis() < mShutoffAfterMotion) {
         if (mColorFadingCount < FADE_MAXVALUE) {
           mColorFadingCount+=2;
           pPixels->setBrightness(mColorFadingCount);
-          pPixels->show();
         }
         updateDimmerGPIO();
-        mLastLedChanges = millis();
-      }
-    } else {
-      /* something from Mqtt will fade in */
-      if (mColorFadingCount <= FADE_MAXVALUE) {
-        if ((millis() % 50)  == 0) {
-          mColorFadingCount++;
-          pPixels->setBrightness(mColorFadingCount);
-          pPixels->show();
-        }
       } else {
-        /* Update Mqtt */
-        if ((mColorFadingCount != 0) && (mConnected)) {
-          oneLedNode.setProperty("ambient").send("black");
-        }
-        if ((analogRead(GPIO_LED) != 0) && (mConnected)) {
-          dimmNode.setProperty("value").send("0");
-        }
+        /* something from Mqtt will fade in */
+        if (mColorFadingCount <= FADE_MAXVALUE) {
+          if ((millis() % 50)  == 0) {
+            mColorFadingCount++;
+            pPixels->setBrightness(mColorFadingCount);
+          }
+        } else {
+          /* Update Mqtt */
+          if ((mColorFadingCount != 0) && (mConnected)) {
+            oneLedNode.setProperty("ambient").send("black");
+          }
+          if ((analogRead(GPIO_LED) != 0) && (mConnected)) {
+            dimmNode.setProperty("value").send("0");
+          }
 
-        /* Reset colored leds */
-        for( int i = 0; i < ledAmount.get(); i++ ) {
-            pPixels->setPixelColor(i, 0);
+          /* Reset colored leds */
+          for( int i = 0; i < ledAmount.get(); i++ ) {
+              pPixels->setPixelColor(i, 0);
+          }
+          mColorFadingCount = 0;
+          /* shutoff normal LED */
+          analogWrite(GPIO_LED, 0);
         }
-        mColorFadingCount = 0;
-        /* shutoff normal LED */
-        analogWrite(GPIO_LED, 0);
       }
+      pPixels->show();
+      mLastLedChanges = millis();
     }
   }
 
