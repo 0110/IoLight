@@ -111,8 +111,7 @@ void loopHandler() {
     mLastMotion = digitalRead(GPIO_PIR);
     log(LEVEL_MOTION_DETECTED, 
       String("Fade" + String(mColorFadingCount) + " Time: " + millis() + " finished: " + String(mShutoffAfterMotion) + 
-            ";Motion: " + String(mLastMotion) + " at " + String(1900 + tm.tm_year) + "-" + String(tm.tm_mon + 1) + "-" + String(tm.tm_mday) +
-            " " + String(tm.tm_hour) + ":" + String(tm.tm_min) + ":" + String(tm.tm_sec)), STATUS_MOTION_DETECTED);
+            ";Motion: " + String(mLastMotion)), STATUS_MOTION_DETECTED);
     
     if (!mConnected || (tm.tm_year < 100)) { /* < 2000 as tm_year + 1900 is the year */
       return;
@@ -137,9 +136,9 @@ void loopHandler() {
       if (millis() < mShutoffAfterMotion) {
         mColorFadingCount = 1;
         if (maxPercent > 0) {
-          mPwmFadingCount = PWM_MAXVALUE;
           mPwmFadingFinish = (PWM_MAXVALUE * (100-maxPercent)) / 100;
-          log(LEVEL_PWMSTARTS,String("PWM starts " + String(mPwmFadingCount) + " and ends : " + String(mPwmFadingFinish)), STATUS_PWM_STARTS);
+          log(LEVEL_PWMSTARTS,String("PWM starts " + String(mPwmFadingCount) + " and targets : " + String(mPwmFadingFinish) + " (" + String(maxPercent) + "%)"), STATUS_PWM_STARTS);
+          mPwmFadingCount = PWM_MAXVALUE;
         }
       }
 
@@ -150,12 +149,10 @@ void loopHandler() {
 
 
       if (analogRead(GPIO_LED) != 0) {
-        log(LEVEL_PWM_RETRIGGER,String("Keep " + String(mShutoffAfterMotion) + " as LED is already" + String(analogRead(GPIO_LED)) + " at " + String(1900 + tm.tm_year) + "-" + String(tm.tm_mon + 1) + "-" + String(tm.tm_mday) +
-              " " + String(tm.tm_hour) + ":" + String(tm.tm_min) + ":" + String(tm.tm_sec)), STATUS_PWM_RETRIGGER);
+        log(LEVEL_PWM_RETRIGGER,String("Keep " + String(mShutoffAfterMotion) + " as LED is already" + String(analogRead(GPIO_LED)) ), STATUS_PWM_RETRIGGER);
       } else {
         mShutoffAfterMotion = millis() + (minimumActivation.get() * 1000);
-        log(LEVEL_PWM_RETRIGGER,String("Update " + String(mShutoffAfterMotion) + " at " + String(1900 + tm.tm_year) + "-" + String(tm.tm_mon + 1) + "-" + String(tm.tm_mday) +
-              " " + String(tm.tm_hour) + ":" + String(tm.tm_min) + ":" + String(tm.tm_sec)), STATUS_PWM_RETRIGGER);
+        log(LEVEL_PWM_RETRIGGER,String("Update " + String(mShutoffAfterMotion) ), STATUS_PWM_RETRIGGER);
       }
     }
   }
@@ -337,6 +334,10 @@ void setup() {
   }
 }
 
+/**
+ * @brief Dimmer logic
+ * Update the PWM controlled output and dim the white LEDs if necessary
+ */
 void updateDimmerGPIO() {
     static int oddCalled = 0;
     /* Fade in the white light after booting up to 100% */
@@ -354,6 +355,7 @@ void updateDimmerGPIO() {
         dimmNode.setProperty("value").send(String("0"));
         pPixels->clear();
         pPixels->show();
+        log(LEVEL_PWM_RETRIGGER,String("Finished fading"), STATUS_PWM_RETRIGGER);
     }
 }
 
@@ -486,9 +488,16 @@ void log(int level, String message, int statusCode)
 {
   String buffer;
   StaticJsonDocument<200> doc;
+  // Read the current time
+  time_t now; // this is the epoch
+  tm tm;      // the structure tm holds time information in a more convient way
+  time(&now);
+  localtime_r(&now, &tm);
   doc["level"] = level;
   doc["message"] = message;
   doc["statusCode"] = statusCode;
+  doc["time"] =  String(String(1900 + tm.tm_year) + "-" + String(tm.tm_mon + 1) + "-" + String(tm.tm_mday) +
+              " " + String(tm.tm_hour) + ":" + String(tm.tm_min) + ":" + String(tm.tm_sec));
   serializeJson(doc, buffer);
   if (mConnected)
   {
