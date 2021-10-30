@@ -148,8 +148,15 @@ void loopHandler() {
         pPixels->setPixelColor(i, color);
       }
 
-      mShutoffAfterMotion = millis() + (minimumActivation.get() * 1000);
-      log(LEVEL_PWM_RETRIGGER,String("Update " + String(mShutoffAfterMotion) + " at " + String(millis())), STATUS_PWM_RETRIGGER);
+
+      if (analogRead(GPIO_LED) != 0) {
+        log(LEVEL_PWM_RETRIGGER,String("Keep " + String(mShutoffAfterMotion) + " as LED is already" + String(analogRead(GPIO_LED)) + " at " + String(1900 + tm.tm_year) + "-" + String(tm.tm_mon + 1) + "-" + String(tm.tm_mday) +
+              " " + String(tm.tm_hour) + ":" + String(tm.tm_min) + ":" + String(tm.tm_sec)), STATUS_PWM_RETRIGGER);
+      } else {
+        mShutoffAfterMotion = millis() + (minimumActivation.get() * 1000);
+        log(LEVEL_PWM_RETRIGGER,String("Update " + String(mShutoffAfterMotion) + " at " + String(1900 + tm.tm_year) + "-" + String(tm.tm_mon + 1) + "-" + String(tm.tm_mday) +
+              " " + String(tm.tm_hour) + ":" + String(tm.tm_min) + ":" + String(tm.tm_sec)), STATUS_PWM_RETRIGGER);
+      }
     }
   }
 
@@ -342,6 +349,7 @@ void updateDimmerGPIO() {
         mPwmFadingCount-=20;
         oddCalled = (oddCalled + 1) % 2;
     } else if (millis() >= mShutoffAfterMotion) {
+        /* deactivate all LEDs, after the "minimum time is gone" */
         analogWrite(GPIO_LED, 0);
         dimmNode.setProperty("value").send(String("0"));
         pPixels->clear();
@@ -396,9 +404,6 @@ void loop() {
           /* Update Mqtt */
           if ((mColorFadingCount != 0) && (mConnected)) {
             oneLedNode.setProperty("ambient").send("black");
-          }
-          if ((analogRead(GPIO_LED) != 0) && (mConnected)) {
-            dimmNode.setProperty("value").send("0");
           }
 
           /* Reset colored leds */
