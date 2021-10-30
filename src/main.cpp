@@ -389,12 +389,12 @@ void loop() {
   /* the chip has to do something with color */
   } else {
     if ((millis() - mLastLedChanges) >= 100) {
+      updateDimmerGPIO();
       if (millis() < mShutoffAfterMotion) {
         if (mColorFadingCount < FADE_MAXVALUE) {
           mColorFadingCount+=2;
           pPixels->setBrightness(mColorFadingCount);
         }
-        updateDimmerGPIO();
       } else {
         /* something from Mqtt will fade in */
         if (mColorFadingCount <= FADE_MAXVALUE) {
