@@ -353,6 +353,9 @@ void updateDimmerGPIO() {
         /* deactivate all LEDs, after the "minimum time is gone" */
         if (analogRead(GPIO_LED) != 0) {
           log(LEVEL_PWM_RETRIGGER,String("Finished fading"), STATUS_PWM_RETRIGGER);
+          /* Reset everything */
+          mPwmFadingFinish = PWM_MAXVALUE;
+          mPwmFadingCount = PWM_MAXVALUE;
         }
         analogWrite(GPIO_LED, 0);
         dimmNode.setProperty("value").send(String("0"));
