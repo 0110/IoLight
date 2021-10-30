@@ -351,11 +351,13 @@ void updateDimmerGPIO() {
         oddCalled = (oddCalled + 1) % 2;
     } else if (millis() >= mShutoffAfterMotion) {
         /* deactivate all LEDs, after the "minimum time is gone" */
+        if (analogRead(GPIO_LED) != 0) {
+          log(LEVEL_PWM_RETRIGGER,String("Finished fading"), STATUS_PWM_RETRIGGER);
+        }
         analogWrite(GPIO_LED, 0);
         dimmNode.setProperty("value").send(String("0"));
         pPixels->clear();
         pPixels->show();
-        log(LEVEL_PWM_RETRIGGER,String("Finished fading"), STATUS_PWM_RETRIGGER);
     }
 }
 
