@@ -59,7 +59,7 @@ HomieNode oneLedNode /* to rule them all */("led", "RGB led", "all leds");
 HomieNode lampNode("lamp", "Lamp switch", "White lamp On-Off");
 HomieNode dimmNode("dimm", "Lamp Dimmed", "White lamp can be dimmed");
 HomieNode monitor("monitor", "Monitor motion", "Monigor motion via PIR");
-HomieNode temperatureNode("temperatur", "Temparture", "inside case");
+HomieNode temperatureNode("temperature", "Temparture", "inside case");
 
 bool mHomieConfigured = false;
 unsigned long mLastLedChanges = 0U;
@@ -438,7 +438,7 @@ void loop() {
       break;
     
     default:
-      Serial.print("Unkown command: ");
+      Serial.print("Unknown command: ");
       Serial.println((char) c);
       Serial.println("Usage: ");
       Serial.println("c - clear homie configuration");
