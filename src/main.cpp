@@ -426,7 +426,7 @@ void loop() {
     switch (c)
     {
     case 'c':
-      if (Homie.isConfigured()) {
+      if (mHomieConfigured) {
         if (SPIFFS.exists ("/homie/config.json") ) 
         { 
           Serial << "Delete Configuration" << endl;
@@ -449,7 +449,7 @@ void loop() {
 
   // Use Flash button to reset configuration
   if (digitalRead(GPIO_BUTTON) == HIGH) {
-    if (Homie.isConfigured()) {
+    if (mHomieConfigured) {
       if (mButtonPressingCount > RESET_TRIGGER) {
         /* shutoff the LEDs */
         for( int i = 0; i < ledAmount.get(); i++ ) {
