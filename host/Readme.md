@@ -11,16 +11,17 @@ http://homieiot.github.io/homie-esp8266/docs/develop-v3/configuration/json-confi
 
 # Remote Upload
 
-
-This script will allow you to send an OTA update to your device.
+This script will allow you to send an OTA update to your device:
+***upload-via-mqtt.sh***
 
 ## Installation
 
 Requirements are:
 * paho-mqtt
 
-## Usage
+## Usage of underlying tool
 
+The python script can be used, manually, too:
 ```text
 usage: ota_updater.py [-h] -l BROKER_HOST -p BROKER_PORT [-u BROKER_USERNAME]
                       [-d BROKER_PASSWORD] [-t BASE_TOPIC] -i DEVICE_ID
