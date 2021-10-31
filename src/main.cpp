@@ -398,7 +398,7 @@ void loop() {
     }
   /* the chip has to do something with color */
   } else {
-    if ((millis() - mLastLedChanges) >= 100) {
+    if ((millis() - mLastLedChanges) >= FADE_INTERVAL) {
       updateDimmerGPIO();
       if (millis() < mShutoffAfterMotion) {
         if (mColorFadingCount < FADE_MAXVALUE) {
