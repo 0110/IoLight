@@ -85,8 +85,10 @@ void onHomieEvent(const HomieEvent &event)
     Homie.getLogger() << "My statistics" << endl;
     break;
   case HomieEventType::MQTT_READY:
+#ifdef PIR_ENABLE
     Serial.printf("NTP Setup with server %s\r\n", ntpServer.get());
     configTime(0, 0, ntpServer.get());
+#endif
     mConnected = true;
   default:
     break;
@@ -94,12 +96,12 @@ void onHomieEvent(const HomieEvent &event)
 }
 
 void loopHandler() {
+#ifdef PIR_ENABLE
   // always shutdown LED after controller was started
   if (mShutoffAfterMotion == TIME_UNDEFINED) {
     mShutoffAfterMotion = millis() + (minimumActivation.get() * 1000);
     log(LEVEL_PWM_INITIAL,String("Finish initial start: " + String(mShutoffAfterMotion)), STATUS_PWM_INITIAL);
   }
-
   // Handle motion sensor
   if (mLastMotion != digitalRead(GPIO_PIR)) {
     // Read the current time
@@ -156,6 +158,7 @@ void loopHandler() {
       }
     }
   }
+#endif
 
   if (oneWireSensorAvail.get()) {
       int sensorCount = sensors.getDeviceCount();
@@ -278,6 +281,7 @@ void setup() {
   ledAmount.setDefaultValue(NUMBER_LEDS).setValidator([] (long candidate) {
     return (candidate > 0) && (candidate < 2048);
   });
+  #ifdef PIR_ENABLE
   dayColor.setDefaultValue("off").setValidator([] (const char *candidate) {
     return extractColor(candidate, strlen(candidate)) != 0xFFFFFFFF;
   });
@@ -300,6 +304,7 @@ void setup() {
     return (candidate >= 0) && (candidate < 1000);
   });
   ntpServer.setDefaultValue("pool.ntp.org");
+#endif
   oneWireSensorAvail.setDefaultValue(false).setValidator([] (int candidate) {
     return true;
   });

@@ -37,6 +37,8 @@
 #define STATUS_UNKNOWN_CMD      9000
 
 HomieSetting<long> ledAmount("leds", "Amount of LEDs (of type WS2812); Range 1 to 2047");
+HomieSetting<bool> oneWireSensorAvail("oneWire", "One wire Bus installed at D7 (disabled as default)");
+#ifdef PIR_ENABLE
 HomieSetting<const char*> dayColor("dayColor", "color to show at day");
 HomieSetting<const char*> nightColor("nightColor", "color to show at night");
 HomieSetting<long> dayPercent("dayPerc", "dim white light to x% at day (0: disabled)");
@@ -45,6 +47,6 @@ HomieSetting<long> nightStartHour("nightStart", "Hour when night starts (0-23)")
 HomieSetting<long> nightEndHour("nightEnd", "Hour when night ends (0-23)");
 HomieSetting<long> minimumActivation("minimumAct", "Activation in seconds (1-999)");
 HomieSetting<const char *> ntpServer("ntpServer", "NTP server (pool.ntp.org as default)");
-HomieSetting<bool> oneWireSensorAvail("oneWire", "One wire Bus installed at D7 (disabled as default)");
+#endif
 
 #endif /*  LIGHT_CONFIGURATION_H */

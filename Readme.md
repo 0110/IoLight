@@ -40,6 +40,9 @@ Upload this new generated filesystem with:
 # Hardware
 * D1: WS2812 RGB LEDs
 * D0: Button
-* D6: IR PIR motion sensor
 * D2: N-Channel Mosfet (e.g. LL2705)
+* D7: One-Wire temperature sensor (DS 18B20)
+## Optional
+* D6: IR PIR motion sensor
 
+Must be activated in the firmware with **PIR_ENABLE**
