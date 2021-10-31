@@ -465,7 +465,7 @@ void loop() {
       if (mButtonPressingCount > RESET_TRIGGER) {
         /* shutoff the LEDs */
         for( int i = 0; i < ledAmount.get(); i++ ) {
-            pPixels->setPixelColor(i, pPixels->Color(0 /*red */, 0 /* green */, 0 /* blue */));
+            pPixels->setPixelColor(i, pPixels->Color(128 /*red */, 0 /* green */, 0 /* blue */));
         }
         pPixels->show();   // make sure it is visible
         if (SPIFFS.exists ("/homie/config.json") ) 

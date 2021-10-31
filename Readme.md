@@ -1,4 +1,11 @@
 # Internet of Light
+
+This Homie V3 standard compitble device provide you a Internet of Things enabled LED lamp.
+It can control a dimmable (e.g. white) LED [*via D2*].
+Additionally colored LEDs can be added, for now WS2812 LEDs are supported [*via D1*]. The complete RGB LED strip can be controlled, or each lamp individualy.
+
+An external switch [*via D0*] the white LED can be switched on, or off. The lamp will dim between the states using its PWM functionality. Pressing this switch until all colored LEDs are red, will reset the current stored configuration. (The button can be deactivated in the firmware with ```-D NOBUTTON```)
+
 ## Dependency
 Homie for ESP8266 (e.g. nodemcu)
 
@@ -42,6 +49,7 @@ Upload this new generated filesystem with:
 * D0: Button
 * D2: N-Channel Mosfet (e.g. LL2705)
 * D7: One-Wire temperature sensor (DS 18B20)
+
 ## Optional
 * D6: IR PIR motion sensor
 

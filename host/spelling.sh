@@ -7,4 +7,5 @@ if [ $? -ne 0 ]; then
 fi
 codespell -w ../src/*
 codespell -w ../include/*
+codespell ../Readme.md
 exit 0
