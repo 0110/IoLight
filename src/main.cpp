@@ -498,16 +498,18 @@ void log(int level, String message, int statusCode)
 {
   String buffer;
   StaticJsonDocument<200> doc;
+#ifdef PIR_ENABLE
   // Read the current time
   time_t now; // this is the epoch
   tm tm;      // the structure tm holds time information in a more convient way
   time(&now);
   localtime_r(&now, &tm);
+  doc["time"] =  String(String(1900 + tm.tm_year) + "-" + String(tm.tm_mon + 1) + "-" + String(tm.tm_mday) +
+              " " + String(tm.tm_hour) + ":" + String(tm.tm_min) + ":" + String(tm.tm_sec));
+#endif
   doc["level"] = level;
   doc["message"] = message;
   doc["statusCode"] = statusCode;
-  doc["time"] =  String(String(1900 + tm.tm_year) + "-" + String(tm.tm_mon + 1) + "-" + String(tm.tm_mday) +
-              " " + String(tm.tm_hour) + ":" + String(tm.tm_min) + ":" + String(tm.tm_sec));
   serializeJson(doc, buffer);
   if (mConnected)
   {
