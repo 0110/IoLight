@@ -1,4 +1,4 @@
-# Io Light
+# Internet of Light
 ## Dependency
 Homie for ESP8266 (e.g. nodemcu)
 
