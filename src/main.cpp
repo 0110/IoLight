@@ -145,6 +145,10 @@ void loopHandler() {
         mPwmFadingFinish = (PWM_MAXVALUE * (100-maxPercent)) / 100;
         log(LEVEL_PWMSTARTS,String("PWM starts " + String(mPwmFadingCount) + " and targets : " + String(mPwmFadingFinish) + " (" + String(maxPercent) + "%)"), STATUS_PWM_STARTS);
         mPwmFadingCount = PWM_MAXVALUE;
+      } else {
+        /* At night, deactivate the white LED */
+        mPwmFadingCount   = PWM_MAXVALUE;
+        mPwmFadingFinish  = PWM_MAXVALUE;
       }
       for( int i = 0; i < ledAmount.get(); i++ ) {
         pPixels->setBrightness(mColorFadingCount);
@@ -348,7 +352,7 @@ void updateDimmerGPIO() {
     if (mPwmFadingCount > mPwmFadingFinish) {
       int pwmVal = PWM_MAXVALUE-mPwmFadingCount;
       analogWrite(GPIO_LED, pwmVal); 
-        if (oddCalled && mConnected) {
+        if (oddCalled && mConnected) { /* Update MQTT only every second call */
           dimmNode.setProperty("value").send(String(((pwmVal * 100U) / PWM_MAXVALUE)));
         }
         mPwmFadingCount-=20;
