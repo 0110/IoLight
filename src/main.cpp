@@ -323,8 +323,9 @@ void setup() {
   }
   pPixels->show();
   Serial << "WS2812 Strip initialized with " << (ledAmount.get()) << " leds" << endl;
-
+#ifndef NOBUTTON
   pinMode(GPIO_BUTTON, INPUT); // GPIO0 as input
+#endif 
   pinMode(GPIO_PIR, INPUT);
   pinMode(GPIO_LED, OUTPUT); // PWM Pin for white LED
   analogWrite(GPIO_LED, 0); // activate LED with 0%
@@ -458,7 +459,7 @@ void loop() {
     }
 
   }
-
+#ifndef NOBUTTON
   // Use Flash button to reset configuration
   if (digitalRead(GPIO_BUTTON) == HIGH) {
     if (mHomieConfigured) {
@@ -481,7 +482,9 @@ void loop() {
         mButtonPressingCount++;
       }
     } 
-  } else {
+  }
+  else 
+  {
     if (mButtonPressingCount > 0) {
       /* shutoff the LEDs */
       for( int i = 0; i < ledAmount.get(); i++ ) {
@@ -491,6 +494,7 @@ void loop() {
       mButtonPressingCount = 0;
     }
   }
+#endif  
 
 }
 
