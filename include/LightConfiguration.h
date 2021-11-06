@@ -8,7 +8,7 @@
 #define LIGHT_CONFIGURATION_H
 
 
-#define FIRMWARE_VERSION "0.5.0"
+#define FIRMWARE_VERSION "0.6.0"
 
 #define NUMBER_LEDS 6
 

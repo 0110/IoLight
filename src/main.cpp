@@ -326,7 +326,9 @@ void setup() {
 #ifndef NOBUTTON
   pinMode(GPIO_BUTTON, INPUT); // GPIO0 as input
 #endif 
+#ifdef PIR_ENABLE
   pinMode(GPIO_PIR, INPUT);
+#endif 
   pinMode(GPIO_LED, OUTPUT); // PWM Pin for white LED
   analogWrite(GPIO_LED, 0); // activate LED with 0%
 
