@@ -111,9 +111,7 @@ void loopHandler() {
     localtime_r(&now, &tm);
     // Update the motion state
     mLastMotion = digitalRead(GPIO_PIR);
-    log(LEVEL_MOTION_DETECTED, 
-      String("Fade" + String(mColorFadingCount) + " Time: " + millis() + " finished: " + String(mShutoffAfterMotion) + 
-            ";Motion: " + String(mLastMotion)), STATUS_MOTION_DETECTED);
+    log(LEVEL_MOTION_CHANGED, String("Motion : ") + String(mLastMotion ? "high" : "low") ,STATUS_MOTION_CHANGED);
     
     if (!mConnected || (tm.tm_year < 100)) { /* < 2000 as tm_year + 1900 is the year */
       return;
@@ -122,7 +120,11 @@ void loopHandler() {
     
     somethingReceived = true; // Stop the animation, as a montion was detected */
 
-    if (mLastMotion == HIGH) {
+    if ((mLastMotion == HIGH) && 
+        (mShutoffAfterMotion == TIME_FADE_DONE)) {
+      log(LEVEL_MOTION_DETECTED, 
+          String("Fade" + String(mColorFadingCount) + " Time: " + millis() + " finished: " + String(mShutoffAfterMotion) + 
+            ";Motion: " + String(mLastMotion)), STATUS_MOTION_DETECTED);
       // FIXME check, if dayColor or nightcolor has the value "Decativated"
       uint32_t color = extractColor(dayColor.get(), strlen(dayColor.get()) );
       int maxPercent = dayPercent.get();
@@ -409,6 +411,7 @@ void loop() {
           pPixels->setBrightness(mColorFadingCount);
         }
       } else {
+        mShutoffAfterMotion = TIME_FADE_DONE;
         /* something from Mqtt will fade in */
         if (mColorFadingCount <= FADE_MAXVALUE) {
           if ((millis() % 50)  == 0) {

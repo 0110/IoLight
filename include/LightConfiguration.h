@@ -19,6 +19,7 @@
 #define FADE_MAXVALUE   255
 
 #define TIME_UNDEFINED  0xFFFFFFFFU
+#define TIME_FADE_DONE  0xFFFFFFFEU
 
 #define GPIO_BUTTON     D0  /**< Input button */
 #define GPIO_WS2812     D1  /**< RGB LEDs */
@@ -30,8 +31,10 @@
 #define LEVEL_PWMSTARTS         1
 #define LEVEL_PWM_INITIAL       1
 #define LEVEL_PWM_RETRIGGER     1
+#define LEVEL_MOTION_CHANGED    2
 #define LEVEL_UNKOWN_CMD        100
 #define STATUS_MOTION_DETECTED  1000
+#define STATUS_MOTION_CHANGED    999
 #define STATUS_PWM_STARTS       1001
 #define STATUS_PWM_INITIAL      1002
 #define STATUS_PWM_RETRIGGER    1003
