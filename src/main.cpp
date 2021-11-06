@@ -121,11 +121,9 @@ void loopHandler() {
     }
     monitor.setProperty("motion").send(String(mLastMotion ? "true" : "false"));
     
-    somethingReceived = true; // Stop the animation, as a montion was detected */
-
     if ((mLastMotion == HIGH) && 
         (mShutoffAfterMotion == TIME_FADE_DONE)) {
-
+      somethingReceived = true; // Stop the animation, as a montion was detected */
       log(LEVEL_MOTION_DETECTED, String(mShutoffAfterMotion, 16) + String(" ") +
           String("Fade" + String(mColorFadingCount) + " Time: " + millis() + " left: " + String((mShutoffAfterMotion- millis())/1000) + String("s")), STATUS_MOTION_DETECTED);
       // FIXME check, if dayColor or nightcolor has the value "Decativated"
@@ -353,28 +351,26 @@ void updateDimmerGPIO() {
     if (mPwmFadingCount > mPwmFadingFinish) {
       pwmVal = PWM_MAXVALUE-mPwmFadingCount;
       analogWrite(GPIO_LED, pwmVal); 
-        if (oddCalled && mConnected) { /* Update MQTT only every second call */
+        if ((oddCalled == 0) && mConnected) { /* Update MQTT only every second call */
           dimmNode.setProperty("value").send(String(((pwmVal * 100U) / PWM_MAXVALUE)));
         }
         mPwmFadingCount -= PWM_STEP;
-        oddCalled = (oddCalled + 1) % 2;
+        oddCalled = (oddCalled + 1) % 10;
     /* Fade in the white light down to 0% */
     } else if (mPwmFadingCount < mPwmFadingFinish) {
       pwmVal = PWM_MAXVALUE-mPwmFadingCount;
       analogWrite(GPIO_LED, pwmVal); 
-        if (oddCalled && mConnected) { /* Update MQTT only every second call */
+        if ((oddCalled == 0) && mConnected) { /* Update MQTT only every second call */
           dimmNode.setProperty("value").send(String(((pwmVal * 100U) / PWM_MAXVALUE)));
         }
         mPwmFadingCount += PWM_STEP;
-        oddCalled = (oddCalled + 1) % 2;
+        oddCalled = (oddCalled + 1) % 10;
     } else if (millis() >= mShutoffAfterMotion) {
         /* deactivate all LEDs, after the "minimum time is gone" */
-        if (analogRead(GPIO_LED) != 0) {
-          log(LEVEL_PWM_FINISHED,String("Finished fading"), STATUS_PWM_FINISHED);
-          /* target: deactivation */
-          mPwmFadingCount = PWM_MAXVALUE;
-        }
-        dimmNode.setProperty("value").send(String("0"));
+        log(LEVEL_PWM_FINISHED,String("Finished fading"), STATUS_PWM_FINISHED);
+        /* target: deactivation */
+        mPwmFadingFinish = 0;
+
         pPixels->clear();
         pPixels->show();
     }
@@ -401,8 +397,8 @@ void loop() {
   /* No input, chip is in IDLE mode */
   } else if (!somethingReceived) {
     static uint8_t position = 0;
-    if ( ((millis() - mLastLedChanges) >= 20) ||
-        (mLastLedChanges == 0) ) {
+    if ( ((millis() - mLastLedChanges) >= FADE_INTERVAL) ||
+        (mLastLedChanges == 0U) ) {
       RainbowCycle(pPixels, &position);
       updateDimmerGPIO();
       mLastLedChanges = millis();
@@ -411,35 +407,17 @@ void loop() {
   } else {
     if ((millis() - mLastLedChanges) >= FADE_INTERVAL) {
       updateDimmerGPIO();
+      /* LEDs are in the configured time frame, where they must be activated */
       if (millis() < mShutoffAfterMotion) {
         if (mColorFadingCount < FADE_MAXVALUE) {
           mColorFadingCount+=2;
           pPixels->setBrightness(mColorFadingCount);
         }
       } else {
+        /* enough enlightment... deactivate */
         mShutoffAfterMotion = TIME_FADE_DONE;
-        /* something from Mqtt will fade in */
-        if (mColorFadingCount <= FADE_MAXVALUE) {
-          if ((millis() % 50)  == 0) {
-            mColorFadingCount++;
-            pPixels->setBrightness(mColorFadingCount);
-          }
-        } else {
-          /* Update Mqtt */
-          if ((mColorFadingCount != 0) && (mConnected)) {
-            oneLedNode.setProperty("ambient").send("black");
-          }
-
-          /* Reset colored leds */
-          for( int i = 0; i < ledAmount.get(); i++ ) {
-              pPixels->setPixelColor(i, 0);
-          }
-          mColorFadingCount = 0;
-          /* shutoff normal LED */
-          analogWrite(GPIO_LED, 0);
-        }
+        log(LEVEL_PWM_FINISHED,String("Set to ") + String(mShutoffAfterMotion, 16) + String("s"), STATUS_PWM_FINISHED);
       }
-      pPixels->show();
       mLastLedChanges = millis();
     }
   }

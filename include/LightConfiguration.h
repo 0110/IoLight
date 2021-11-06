@@ -13,7 +13,7 @@
 #define NUMBER_LEDS 6
 
 #define BLINK_INTERVAL  500 /**< Milliseconds cycle time */
-#define FADE_INTERVAL  50   /**< Milliseconds cycle time */
+#define FADE_INTERVAL   20  /**< Milliseconds cycle time */
 #define RESET_TRIGGER   2048
 #define PWM_MAXVALUE    1023
 #define PWM_STEP        20
