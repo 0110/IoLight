@@ -96,6 +96,9 @@ void onHomieEvent(const HomieEvent &event)
 }
 
 void loopHandler() {
+
+  
+
 #ifdef PIR_ENABLE
   // always shutdown LED after controller was started
   if (mShutoffAfterMotion == TIME_UNDEFINED) {
@@ -122,9 +125,9 @@ void loopHandler() {
 
     if ((mLastMotion == HIGH) && 
         (mShutoffAfterMotion == TIME_FADE_DONE)) {
-      log(LEVEL_MOTION_DETECTED, 
-          String("Fade" + String(mColorFadingCount) + " Time: " + millis() + " finished: " + String(mShutoffAfterMotion) + 
-            ";Motion: " + String(mLastMotion)), STATUS_MOTION_DETECTED);
+
+      log(LEVEL_MOTION_DETECTED, String(mShutoffAfterMotion, 16) + String(" ") +
+          String("Fade" + String(mColorFadingCount) + " Time: " + millis() + " left: " + String((mShutoffAfterMotion- millis())/1000) + String("s")), STATUS_MOTION_DETECTED);
       // FIXME check, if dayColor or nightcolor has the value "Decativated"
       uint32_t color = extractColor(dayColor.get(), strlen(dayColor.get()) );
       int maxPercent = dayPercent.get();
@@ -136,28 +139,19 @@ void loopHandler() {
         oneLedNode.setProperty("ambient").send(String(dayColor.get()));
       }
 
-      /* Activate everything, if not already on */
-      if (millis() < mShutoffAfterMotion) {
-        mColorFadingCount = 1;
-        if (maxPercent > 0) {
-          mPwmFadingFinish = (PWM_MAXVALUE * (100-maxPercent)) / 100;
-          log(LEVEL_PWMSTARTS,String("PWM starts " + String(mPwmFadingCount) + " and targets : " + String(mPwmFadingFinish) + " (" + String(maxPercent) + "%)"), STATUS_PWM_STARTS);
-          mPwmFadingCount = PWM_MAXVALUE;
-        }
+      /* Activate everything */
+      mColorFadingCount = 1;
+      if (maxPercent > 0) {
+        mPwmFadingFinish = (PWM_MAXVALUE * (100-maxPercent)) / 100;
+        log(LEVEL_PWMSTARTS,String("PWM starts " + String(mPwmFadingCount) + " and targets : " + String(mPwmFadingFinish) + " (" + String(maxPercent) + "%)"), STATUS_PWM_STARTS);
+        mPwmFadingCount = PWM_MAXVALUE;
       }
-
       for( int i = 0; i < ledAmount.get(); i++ ) {
         pPixels->setBrightness(mColorFadingCount);
         pPixels->setPixelColor(i, color);
       }
-
-
-      if (analogRead(GPIO_LED) != 0) {
-        log(LEVEL_PWM_RETRIGGER,String("Keep " + String(mShutoffAfterMotion) + " as LED is already" + String(analogRead(GPIO_LED)) ), STATUS_PWM_RETRIGGER);
-      } else {
-        mShutoffAfterMotion = millis() + (minimumActivation.get() * 1000);
-        log(LEVEL_PWM_RETRIGGER,String("Update " + String(mShutoffAfterMotion) ), STATUS_PWM_RETRIGGER);
-      }
+      mShutoffAfterMotion = millis() + (minimumActivation.get() * 1000);
+      log(LEVEL_PWM_RETRIGGER,String("Update " + String(mShutoffAfterMotion) ), STATUS_PWM_RETRIGGER);
     }
   }
 #endif
