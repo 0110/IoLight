@@ -8,7 +8,7 @@
 #define LIGHT_CONFIGURATION_H
 
 
-#define FIRMWARE_VERSION "0.6.0"
+#define FIRMWARE_VERSION "0.7.0"
 
 #define NUMBER_LEDS 6
 
@@ -16,6 +16,7 @@
 #define FADE_INTERVAL  50   /**< Milliseconds cycle time */
 #define RESET_TRIGGER   2048
 #define PWM_MAXVALUE    1023
+#define PWM_STEP        20
 #define FADE_MAXVALUE   255
 
 #define TIME_UNDEFINED  0xFFFFFFFFU
@@ -31,6 +32,7 @@
 #define LEVEL_PWMSTARTS         1
 #define LEVEL_PWM_INITIAL       1
 #define LEVEL_PWM_RETRIGGER     1
+#define LEVEL_PWM_FINISHED      1
 #define LEVEL_MOTION_CHANGED    2
 #define LEVEL_UNKOWN_CMD        100
 #define STATUS_MOTION_DETECTED  1000
@@ -38,6 +40,7 @@
 #define STATUS_PWM_STARTS       1001
 #define STATUS_PWM_INITIAL      1002
 #define STATUS_PWM_RETRIGGER    1003
+#define STATUS_PWM_FINISHED     1004
 #define STATUS_UNKNOWN_CMD      9000
 
 HomieSetting<long> ledAmount("leds", "Amount of LEDs (of type WS2812); Range 1 to 2047");

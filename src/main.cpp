@@ -348,24 +348,32 @@ void setup() {
  */
 void updateDimmerGPIO() {
     static int oddCalled = 0;
-    /* Fade in the white light after booting up to 100% */
+    int pwmVal = 0;
+    /* Fade in the white light up to 100% */
     if (mPwmFadingCount > mPwmFadingFinish) {
-      int pwmVal = PWM_MAXVALUE-mPwmFadingCount;
+      pwmVal = PWM_MAXVALUE-mPwmFadingCount;
       analogWrite(GPIO_LED, pwmVal); 
         if (oddCalled && mConnected) { /* Update MQTT only every second call */
           dimmNode.setProperty("value").send(String(((pwmVal * 100U) / PWM_MAXVALUE)));
         }
-        mPwmFadingCount-=20;
+        mPwmFadingCount -= PWM_STEP;
+        oddCalled = (oddCalled + 1) % 2;
+    /* Fade in the white light down to 0% */
+    } else if (mPwmFadingCount < mPwmFadingFinish) {
+      pwmVal = PWM_MAXVALUE-mPwmFadingCount;
+      analogWrite(GPIO_LED, pwmVal); 
+        if (oddCalled && mConnected) { /* Update MQTT only every second call */
+          dimmNode.setProperty("value").send(String(((pwmVal * 100U) / PWM_MAXVALUE)));
+        }
+        mPwmFadingCount += PWM_STEP;
         oddCalled = (oddCalled + 1) % 2;
     } else if (millis() >= mShutoffAfterMotion) {
         /* deactivate all LEDs, after the "minimum time is gone" */
         if (analogRead(GPIO_LED) != 0) {
-          log(LEVEL_PWM_RETRIGGER,String("Finished fading"), STATUS_PWM_RETRIGGER);
-          /* Reset everything */
-          mPwmFadingFinish = PWM_MAXVALUE;
+          log(LEVEL_PWM_FINISHED,String("Finished fading"), STATUS_PWM_FINISHED);
+          /* target: deactivation */
           mPwmFadingCount = PWM_MAXVALUE;
         }
-        analogWrite(GPIO_LED, 0);
         dimmNode.setProperty("value").send(String("0"));
         pPixels->clear();
         pPixels->show();
