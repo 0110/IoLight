@@ -180,14 +180,14 @@ void loopHandler() {
 bool switchHandler(const HomieRange& range, const String& value) {
   if (range.isRange) return false;  // only one switch is present
   if (value == "off" || value == "Off" || value == "OFF" || value == "false") {
-    analogWrite(GPIO_LED, 0);
+    mPwmFadingFinish = 0;
     dimmNode.setProperty("value").send(value);
   } else if (value == "on" || value == "On" || value == "ON" || value == "true") {
-    analogWrite(GPIO_LED, PWM_MAXVALUE);
+    mPwmFadingFinish = PWM_MAXVALUE;
     dimmNode.setProperty("value").send(value);
   } else if ( value.length() > 0 && isDigit(value.charAt(0))  ) {
-      Serial << "MQTT | Dimm to " << value.toInt() << "%" << endl;
-      analogWrite(GPIO_LED, (value.toInt() * PWM_MAXVALUE) / 100);
+      log(LEVEL_PWMSTARTS, String("MQTT | Dimm to ") + String(value.toInt()) + String( "%"), STATUS_PWM_STARTS);
+      mPwmFadingFinish = (value.toInt() * PWM_MAXVALUE) / 100;
       dimmNode.setProperty("value").send(value);
   } else {
     log(LEVEL_UNKOWN_CMD, String(value), STATUS_UNKNOWN_CMD);
