@@ -11,11 +11,21 @@
 #ifndef IOLIGHT_PWM_LED
 #define IOLIGHT_PWM_LED
 
+#define PWM_MAXVALUE    1023
+
+#define PWM_LED_DIM_TARGET_OFF -1
+
 class PwmLED
 {
 
 private:
+    /* settings */
     int mOutputPin = 0;   /**< Pin of the pump */
+    int mCycleTime = 0;
+    int mStep = 0;
+    /* local variables */
+    int mDimTarget = PWM_LED_DIM_TARGET_OFF;
+    int mLastLEDupdate = 0;
     
 public:
     
@@ -25,7 +35,7 @@ public:
      * @param pin Pin of LED
      * @param cycleTime cycle time in ms, when output is updated
      */
-    PwmLED(int pinSensor, int cycleTime);
+    PwmLED(int pinSensor, int cycleTime, int step);
 
     /**
      * @brief 
@@ -38,7 +48,7 @@ public:
      * 
      * @param targetValue 
      */
-    void dim(int targetValue);
+    void dimPercent(int targetValue);
 
     void setOff(void);
     void setOn(void);

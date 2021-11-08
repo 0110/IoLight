@@ -19,6 +19,7 @@
 #include <time.h>  
 #include "DallasTemperature.h"
 #include <OneWire.h>
+#include "PwmLed.h"
 
 /******************************************************************************
  *                                     DEFINES
@@ -51,6 +52,7 @@ void log(int level, String message, int code);
  ******************************************************************************/
 Adafruit_NeoPixel* pPixels = NULL;
 OneWire oneWire(GPIO_DS18B20);
+PwmLED led(GPIO_LED, FADE_INTERVAL, PWM_STEP);
 DallasTemperature sensors(&oneWire);
 float mLastTemperatur = -10.0f;
 
@@ -66,8 +68,6 @@ unsigned long mLastLedChanges = 0U;
 bool somethingReceived = false;
 
 unsigned int mButtonPressingCount = 0;        /**< Delay before everything is reset */
-int mPwmFadingCount = PWM_MAXVALUE;           /**< Used for fading white LED */
-int mPwmFadingFinish = 0;
 unsigned int mColorFadingCount = FADE_MAXVALUE;
 bool mLastMotion=false;
 unsigned long mShutoffAfterMotion = TIME_UNDEFINED;     /**< Time, when LED has to be deactivated after motion */
@@ -96,8 +96,6 @@ void onHomieEvent(const HomieEvent &event)
 }
 
 void loopHandler() {
-
-  
 
 #ifdef PIR_ENABLE
   // always shutdown LED after controller was started
@@ -140,13 +138,11 @@ void loopHandler() {
       /* Activate everything */
       mColorFadingCount = 1;
       if (maxPercent > 0) {
-        mPwmFadingFinish = (PWM_MAXVALUE * (100-maxPercent)) / 100;
-        log(LEVEL_PWMSTARTS,String("PWM starts " + String(mPwmFadingCount) + " and targets : " + String(mPwmFadingFinish) + " (" + String(maxPercent) + "%)"), STATUS_PWM_STARTS);
-        mPwmFadingCount = PWM_MAXVALUE;
+        led.dimPercent(maxPercent);
+        log(LEVEL_PWMSTARTS,String("PWM starts (" + String(maxPercent) + "%)"), STATUS_PWM_STARTS);
       } else {
         /* At night, deactivate the white LED */
-        mPwmFadingCount   = PWM_MAXVALUE;
-        mPwmFadingFinish  = PWM_MAXVALUE;
+        ;
       }
       for( int i = 0; i < ledAmount.get(); i++ ) {
         pPixels->setBrightness(mColorFadingCount);
@@ -180,15 +176,20 @@ void loopHandler() {
 bool switchHandler(const HomieRange& range, const String& value) {
   if (range.isRange) return false;  // only one switch is present
   if (value == "off" || value == "Off" || value == "OFF" || value == "false") {
-    mPwmFadingFinish = 0;
+    led.setOff();
     dimmNode.setProperty("value").send(value);
   } else if (value == "on" || value == "On" || value == "ON" || value == "true") {
-    mPwmFadingFinish = PWM_MAXVALUE;
+    led.setOn();
     dimmNode.setProperty("value").send(value);
   } else if ( value.length() > 0 && isDigit(value.charAt(0))  ) {
-      log(LEVEL_PWMSTARTS, String("MQTT | Dimm to ") + String(value.toInt()) + String( "%"), STATUS_PWM_STARTS);
-      mPwmFadingFinish = (value.toInt() * PWM_MAXVALUE) / 100;
-      dimmNode.setProperty("value").send(value);
+      int targetVal = value.toInt();
+      if ((targetVal >= 0) && (targetVal <= 100)) {
+        log(LEVEL_PWMSTARTS, String("MQTT | Dimm to ") + String(value.toInt()) + String( "%"), STATUS_PWM_STARTS);
+        led.dimPercent(targetVal);
+        dimmNode.setProperty("value").send(value);
+      } else {
+          log(LEVEL_UNKOWN_CMD, String("MQTT | Unkown percent: '") + String(value) + String( "'"), STATUS_PWM_STARTS);
+      }
   } else {
     log(LEVEL_UNKOWN_CMD, String(value), STATUS_UNKNOWN_CMD);
   }
@@ -327,9 +328,7 @@ void setup() {
 #ifdef PIR_ENABLE
   pinMode(GPIO_PIR, INPUT);
 #endif 
-  pinMode(GPIO_LED, OUTPUT); // PWM Pin for white LED
-  analogWrite(GPIO_LED, 0); // activate LED with 0%
-
+  led.dimPercent(100);
   if (oneWireSensorAvail.get()) {
     sensors.begin();
           for(int j=0; j < TEMP_SENSOR_MEASURE_SERIES && sensors.getDeviceCount() == 0; j++) {
@@ -340,44 +339,9 @@ void setup() {
   }
 }
 
-/**
- * @brief Dimmer logic
- * Update the PWM controlled output and dim the white LEDs if necessary
- */
-void updateDimmerGPIO() {
-    static int oddCalled = 0;
-    int pwmVal = 0;
-    /* Fade in the white light up to 100% */
-    if (mPwmFadingCount > mPwmFadingFinish) {
-      pwmVal = PWM_MAXVALUE-mPwmFadingCount;
-      analogWrite(GPIO_LED, pwmVal); 
-        if ((oddCalled == 0) && mConnected) { /* Update MQTT only every second call */
-          dimmNode.setProperty("value").send(String(((pwmVal * 100U) / PWM_MAXVALUE)));
-        }
-        mPwmFadingCount -= PWM_STEP;
-        oddCalled = (oddCalled + 1) % 10;
-    /* Fade in the white light down to 0% */
-    } else if (mPwmFadingCount < mPwmFadingFinish) {
-      pwmVal = PWM_MAXVALUE-mPwmFadingCount;
-      analogWrite(GPIO_LED, pwmVal); 
-        if ((oddCalled == 0) && mConnected) { /* Update MQTT only every second call */
-          dimmNode.setProperty("value").send(String(((pwmVal * 100U) / PWM_MAXVALUE)));
-        }
-        mPwmFadingCount += PWM_STEP;
-        oddCalled = (oddCalled + 1) % 10;
-    } else if (millis() >= mShutoffAfterMotion) {
-        /* deactivate all LEDs, after the "minimum time is gone" */
-        log(LEVEL_PWM_FINISHED,String("Finished fading"), STATUS_PWM_FINISHED);
-        /* target: deactivation */
-        mPwmFadingFinish = 0;
-
-        pPixels->clear();
-        pPixels->show();
-    }
-}
-
 void loop() {
   Homie.loop();
+  led.loop();
   /* Chip is not configured */
   if (!mHomieConfigured) {
     if ( ((millis() - mLastLedChanges) >= BLINK_INTERVAL) ||
@@ -400,13 +364,12 @@ void loop() {
     if ( ((millis() - mLastLedChanges) >= FADE_INTERVAL) ||
         (mLastLedChanges == 0U) ) {
       RainbowCycle(pPixels, &position);
-      updateDimmerGPIO();
+      position++;
       mLastLedChanges = millis();
     }
   /* the chip has to do something with color */
   } else {
     if ((millis() - mLastLedChanges) >= FADE_INTERVAL) {
-      updateDimmerGPIO();
       /* LEDs are in the configured time frame, where they must be activated */
       if (millis() < mShutoffAfterMotion) {
         if (mColorFadingCount < FADE_MAXVALUE) {
@@ -417,6 +380,8 @@ void loop() {
         /* enough enlightment... deactivate */
         mShutoffAfterMotion = TIME_FADE_DONE;
         log(LEVEL_PWM_FINISHED,String("Set to ") + String(mShutoffAfterMotion, 16) + String("s"), STATUS_PWM_FINISHED);
+        /* shutdown again */
+        led.dimPercent(0);
       }
       mLastLedChanges = millis();
     }

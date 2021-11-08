@@ -7,15 +7,13 @@
 #ifndef LIGHT_CONFIGURATION_H
 #define LIGHT_CONFIGURATION_H
 
-
-#define FIRMWARE_VERSION "0.7.0"
+#define FIRMWARE_VERSION "0.8.0"
 
 #define NUMBER_LEDS 6
 
 #define BLINK_INTERVAL  500 /**< Milliseconds cycle time */
 #define FADE_INTERVAL   20  /**< Milliseconds cycle time */
 #define RESET_TRIGGER   2048
-#define PWM_MAXVALUE    1023
 #define PWM_STEP        20
 #define FADE_MAXVALUE   255
 
