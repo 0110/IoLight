@@ -98,11 +98,6 @@ void onHomieEvent(const HomieEvent &event)
 void loopHandler() {
 
 #ifdef PIR_ENABLE
-  // always shutdown LED after controller was started
-  if (mShutoffAfterMotion == TIME_UNDEFINED) {
-    mShutoffAfterMotion = millis() + (minimumActivation.get() * 1000);
-    log(LEVEL_PWM_INITIAL,String("Finish initial start: " + String(mShutoffAfterMotion)), STATUS_PWM_INITIAL);
-  }
   // Handle motion sensor
   if (mLastMotion != digitalRead(GPIO_PIR)) {
     // Read the current time
@@ -121,7 +116,16 @@ void loopHandler() {
     
     if ((mLastMotion == HIGH) && 
         (mShutoffAfterMotion == TIME_FADE_DONE)) {
+      
+      /* clear LEDs */
+      if (!somethingReceived) {
+        pPixels->clear();
+        pPixels->show();
+        led.dimPercent(0);
+      }
       somethingReceived = true; // Stop the animation, as a montion was detected */
+      
+
       log(LEVEL_MOTION_DETECTED, String(mShutoffAfterMotion, 16) + String(" ") +
           String("Fade" + String(mColorFadingCount) + " Time: " + millis() + " left: " + String((mShutoffAfterMotion- millis())/1000) + String("s")), STATUS_MOTION_DETECTED);
       // FIXME check, if dayColor or nightcolor has the value "Decativated"
@@ -337,6 +341,9 @@ void setup() {
         Serial << "Reset 1-Wire Bus" << endl;
       }
   }
+  // always shutdown LED after controller was started
+  mShutoffAfterMotion = millis() + (minimumActivation.get() * 1000);
+  log(LEVEL_PWM_INITIAL,String("Finish initial start: " + String(mShutoffAfterMotion)), STATUS_PWM_INITIAL);
 }
 
 void loop() {
@@ -375,6 +382,7 @@ void loop() {
         if (mColorFadingCount < FADE_MAXVALUE) {
           mColorFadingCount+=2;
           pPixels->setBrightness(mColorFadingCount);
+          pPixels->show();
         }
       } else {
         /* enough enlightment... deactivate */
