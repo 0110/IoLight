@@ -128,7 +128,7 @@ void loopHandler() {
 
       log(LEVEL_MOTION_DETECTED, String(mShutoffAfterMotion, 16) + String(" ") +
           String("Fade" + String(mColorFadingCount) + " Time: " + millis() + " left: " + String((mShutoffAfterMotion- millis())/1000) + String("s")), STATUS_MOTION_DETECTED);
-      // FIXME check, if dayColor or nightcolor has the value "Decativated"
+      
       uint32_t color = extractColor(dayColor.get(), strlen(dayColor.get()) );
       int maxPercent = dayPercent.get();
       if ((nightStartHour.get() <= tm.tm_hour) || (tm.tm_hour <= nightEndHour.get()) ) {
@@ -139,19 +139,25 @@ void loopHandler() {
         oneLedNode.setProperty("ambient").send(String(dayColor.get()));
       }
 
-      /* Activate everything */
-      mColorFadingCount = 1;
-      if (maxPercent > 0) {
-        led.dimPercent(maxPercent);
-        log(LEVEL_PWMSTARTS,String("PWM starts (" + String(maxPercent) + "%)"), STATUS_PWM_STARTS);
+      // check, if dayColor or nightcolor has the value "Decativated"
+      if (color == 0U) {
+        mColorFadingCount = 0;  
       } else {
-        /* At night, deactivate the white LED */
-        ;
+        /* Activate everything */
+        mColorFadingCount = 1;
+        if (maxPercent > 0) {
+          led.dimPercent(maxPercent);
+          log(LEVEL_PWMSTARTS,String("PWM starts (" + String(maxPercent) + "%)"), STATUS_PWM_STARTS);
+        } else {
+          /* At night, deactivate the white LED */
+          ;
+        }
+        for( int i = 0; i < ledAmount.get(); i++ ) {
+          pPixels->setBrightness(mColorFadingCount);
+          pPixels->setPixelColor(i, color);
+        }
       }
-      for( int i = 0; i < ledAmount.get(); i++ ) {
-        pPixels->setBrightness(mColorFadingCount);
-        pPixels->setPixelColor(i, color);
-      }
+
       mShutoffAfterMotion = millis() + (minimumActivation.get() * 1000);
       log(LEVEL_PWM_RETRIGGER,String("Update " + String(mShutoffAfterMotion) ), STATUS_PWM_RETRIGGER);
     }
@@ -379,7 +385,7 @@ void loop() {
     if ((millis() - mLastLedChanges) >= FADE_INTERVAL) {
       /* LEDs are in the configured time frame, where they must be activated */
       if (millis() < mShutoffAfterMotion) {
-        if (mColorFadingCount < FADE_MAXVALUE) {
+        if ((mColorFadingCount > 0) && (mColorFadingCount < FADE_MAXVALUE)) {
           mColorFadingCount+=2;
           pPixels->setBrightness(mColorFadingCount);
           pPixels->show();
