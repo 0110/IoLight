@@ -108,7 +108,7 @@ void loopHandler() {
     localtime_r(&now, &tm);
     // Update the motion state
     mLastMotion = readMotion;
-    log(LEVEL_MOTION_CHANGED, String("Motion : ") + String(mLastMotion ? "high" : "low") ,STATUS_MOTION_CHANGED);
+    log(LEVEL_DEBUG, String("Motion : ") + String(mLastMotion ? "high" : "low") ,STATUS_MOTION_CHANGED);
     
     if (!mConnected || (tm.tm_year < 100)) { /* < 2000 as tm_year + 1900 is the year */
       return;
@@ -127,7 +127,7 @@ void loopHandler() {
       somethingReceived = true; // Stop the animation, as a montion was detected */
       
 
-      log(LEVEL_MOTION_DETECTED, String(mShutoffAfterMotion, 16) + String(" ") +
+      log(LEVEL_DEBUG, String(mShutoffAfterMotion, 16) + String(" ") +
           String("Fade" + String(mColorFadingCount) + " Time: " + millis() + " left: " + String((mShutoffAfterMotion- millis())/1000) + String("s")), STATUS_MOTION_DETECTED);
       
       uint32_t color = extractColor(dayColor.get(), strlen(dayColor.get()) );
@@ -148,7 +148,7 @@ void loopHandler() {
         mColorFadingCount = 1;
         if (maxPercent > 0) {
           led.dimPercent(maxPercent);
-          log(LEVEL_PWMSTARTS,String("PWM starts (" + String(maxPercent) + "%)"), STATUS_PWM_STARTS);
+          log(LEVEL_DEBUG,String("PWM starts (" + String(maxPercent) + "%)"), STATUS_PWM_STARTS);
         } else {
           /* At night, deactivate the white LED */
           ;
@@ -160,7 +160,7 @@ void loopHandler() {
       }
 
       mShutoffAfterMotion = millis() + (minimumActivation.get() * 1000);
-      log(LEVEL_PWM_RETRIGGER,String("Update " + String(mShutoffAfterMotion) ), STATUS_PWM_RETRIGGER);
+      log(LEVEL_DEBUG,String("Update " + String(mShutoffAfterMotion) ), STATUS_PWM_RETRIGGER);
     }
   }
 #endif
@@ -195,14 +195,14 @@ bool switchHandler(const HomieRange& range, const String& value) {
   } else if ( value.length() > 0 && isDigit(value.charAt(0))  ) {
       int targetVal = value.toInt();
       if ((targetVal >= 0) && (targetVal <= 100)) {
-        log(LEVEL_PWMSTARTS, String("MQTT | Dimm to ") + String(value.toInt()) + String( "%"), STATUS_PWM_STARTS);
+        log(LEVEL_LOG, String("MQTT | Dimm to ") + String(value.toInt()) + String( "%"), STATUS_PWM_STARTS);
         led.dimPercent(targetVal);
         dimmNode.setProperty("value").send(value);
       } else {
-          log(LEVEL_UNKOWN_CMD, String("MQTT | Unkown percent: '") + String(value) + String( "'"), STATUS_PWM_STARTS);
+          log(LEVEL_ERROR, String("MQTT | Unkown percent: '") + String(value) + String( "'"), STATUS_PWM_STARTS);
       }
   } else {
-    log(LEVEL_UNKOWN_CMD, String(value), STATUS_UNKNOWN_CMD);
+    log(LEVEL_ERROR, String(value), STATUS_UNKNOWN_CMD);
   }
   somethingReceived = true; // Stop animation
   return true;
@@ -379,7 +379,7 @@ void loop() {
       RainbowCycle(pPixels, &position);
       position++;
       if (millis() > mShutoffAfterMotion) {
-        log(LEVEL_PWM_FINISHED,String("Initial finished to ") + String(mShutoffAfterMotion, 16) + String("s"), STATUS_PWM_FINISHED);
+        log(LEVEL_DEBUG,String("Initial finished to ") + String(mShutoffAfterMotion, 16) + String("s"), STATUS_PWM_FINISHED);
         led.dimPercent(0);
         mShutoffAfterMotion = TIME_FADE_DONE;
       }
@@ -397,7 +397,7 @@ void loop() {
         }
       } else {
         /* enough enlightment... deactivate */
-        log(LEVEL_PWM_FINISHED,String("Set to ") + String(mShutoffAfterMotion, 16) + String("s"), STATUS_PWM_FINISHED);
+        log(LEVEL_DEBUG,String("Set to ") + String(mShutoffAfterMotion, 16) + String("s"), STATUS_PWM_FINISHED);
         /* shutdown again */
         led.dimPercent(0);
         /* colors LEDs are directly powered off */

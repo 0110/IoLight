@@ -26,13 +26,11 @@
 #define GPIO_LED        D2  /**< None RGB light, controlled by mosfet */
 #define GPIO_DS18B20    D7  /**< One-Wire used for Dallas temperature sensor */
 
-#define LEVEL_MOTION_DETECTED   1
-#define LEVEL_PWMSTARTS         1
-#define LEVEL_PWM_INITIAL       1
-#define LEVEL_PWM_RETRIGGER     1
-#define LEVEL_PWM_FINISHED      1
-#define LEVEL_MOTION_CHANGED    2
-#define LEVEL_UNKOWN_CMD        100
+#define LEVEL_ERROR             1
+#define LEVEL_WARNING           2
+#define LEVEL_INFO              3
+#define LEVEL_DEBUG             4
+#define LEVEL_LOG               5
 #define STATUS_MOTION_DETECTED  1000
 #define STATUS_MOTION_CHANGED    999
 #define STATUS_PWM_STARTS       1001
