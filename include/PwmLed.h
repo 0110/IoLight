@@ -50,6 +50,8 @@ public:
      */
     void dimPercent(int targetValue);
 
+    bool isActivated(void);
+
     void setOff(void);
     void setOn(void);
 

@@ -99,14 +99,15 @@ void loopHandler() {
 
 #ifdef PIR_ENABLE
   // Handle motion sensor
-  if (mLastMotion != digitalRead(GPIO_PIR)) {
+  int readMotion = digitalRead(GPIO_PIR);
+  if (mLastMotion != readMotion) {
     // Read the current time
     time_t now; // this is the epoch
     tm tm;      // the structure tm holds time information in a more convient way
     time(&now);
     localtime_r(&now, &tm);
     // Update the motion state
-    mLastMotion = digitalRead(GPIO_PIR);
+    mLastMotion = readMotion;
     log(LEVEL_MOTION_CHANGED, String("Motion : ") + String(mLastMotion ? "high" : "low") ,STATUS_MOTION_CHANGED);
     
     if (!mConnected || (tm.tm_year < 100)) { /* < 2000 as tm_year + 1900 is the year */
@@ -349,7 +350,6 @@ void setup() {
   }
   // always shutdown LED after controller was started
   mShutoffAfterMotion = millis() + (minimumActivation.get() * 1000);
-  log(LEVEL_PWM_INITIAL,String("Finish initial start: " + String(mShutoffAfterMotion)), STATUS_PWM_INITIAL);
 }
 
 void loop() {
@@ -392,10 +392,17 @@ void loop() {
         }
       } else {
         /* enough enlightment... deactivate */
-        mShutoffAfterMotion = TIME_FADE_DONE;
         log(LEVEL_PWM_FINISHED,String("Set to ") + String(mShutoffAfterMotion, 16) + String("s"), STATUS_PWM_FINISHED);
         /* shutdown again */
         led.dimPercent(0);
+        /* colors LEDs are directly powered off */
+        if ((pPixels->getBrightness() > 0) || 
+            (pPixels->getPixelColor(0) > 0) ) {
+              pPixels->fill(pPixels->Color(0,0,0));
+              pPixels->setBrightness(0);
+              pPixels->show();
+            }
+        mShutoffAfterMotion = TIME_FADE_DONE;
       }
       mLastLedChanges = millis();
     }

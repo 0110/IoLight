@@ -53,6 +53,10 @@ void PwmLED::loop(void) {
     }   
 }
 
+bool PwmLED::isActivated(void) {
+    return (analogRead(this->mOutputPin) > 0);
+}
+
 void PwmLED::dimPercent(int targetValue) {
     if ((targetValue >= 0) && (targetValue <= 100)) {
         this->mDimTarget = ((targetValue * PWM_MAXVALUE) / 100U);
