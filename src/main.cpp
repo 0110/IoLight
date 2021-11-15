@@ -397,17 +397,25 @@ void loop() {
         }
       } else {
         /* enough enlightment... deactivate */
-        log(LEVEL_DEBUG,String("Set to ") + String(mShutoffAfterMotion, 16) + String("s"), STATUS_PWM_FINISHED);
-        /* shutdown again */
-        led.dimPercent(0);
-        /* colors LEDs are directly powered off */
-        if ((pPixels->getBrightness() > 0) || 
-            (pPixels->getPixelColor(0) > 0) ) {
-              pPixels->fill(pPixels->Color(0,0,0));
-              pPixels->setBrightness(0);
-              pPixels->show();
+        if (led.isActivated() ||
+              (pPixels->getBrightness() > 0) || 
+              (pPixels->getPixelColor(0) > 0) ) {
+          log(LEVEL_INFO,String("Time gone: ") + String((millis() - mShutoffAfterMotion) / 1000) + String("s"), STATUS_PWM_FINISHED);
+          if (led.isActivated()) {
+            /* shutdown again */
+            led.dimPercent(0);
+          }
+          /* colors LEDs are directly powered off */
+          if ((pPixels->getBrightness() > 0) || 
+              (pPixels->getPixelColor(0) > 0) ) {
+                pPixels->fill(pPixels->Color(0,0,0));
+                pPixels->setBrightness(0);
+                pPixels->show();
             }
-        mShutoffAfterMotion = TIME_FADE_DONE;
+        } else {
+          log(LEVEL_DEBUG,String("Set to ") + String(mShutoffAfterMotion / 1000) + String("s"), STATUS_PWM_FINISHED);
+          mShutoffAfterMotion = TIME_FADE_DONE;
+        }
       }
       mLastLedChanges = millis();
     }
