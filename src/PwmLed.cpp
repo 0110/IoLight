@@ -26,8 +26,8 @@ void PwmLED::loop(void) {
     }
 
     if (this->mDimTarget > PWM_LED_DIM_TARGET_OFF) {
-        int pwmValDiff = mDimTarget - analogRead(this->mOutputPin);
         int pwmNewVal = analogRead(this->mOutputPin);
+        int pwmValDiff = mDimTarget - pwmNewVal;
 
         /* FIXME 
         oddCalled = (oddCalled + 1) % 10;
@@ -44,8 +44,16 @@ void PwmLED::loop(void) {
             pwmNewVal -= this->mStep;
         }
 
-        if ((pwmValDiff > 0) || (pwmValDiff < 0)) {
-            analogWrite(this->mOutputPin, pwmNewVal); 
+        if ((abs(pwmValDiff) > 0) || (abs(pwmValDiff) > 0)) {
+            if (pwmNewVal < 0) {
+                analogWrite(this->mOutputPin, 0);
+                this->mDimTarget = PWM_LED_DIM_TARGET_OFF;
+            } else if(pwmNewVal > PWM_MAXVALUE) {
+                analogWrite(this->mOutputPin, PWM_MAXVALUE);
+                this->mDimTarget = PWM_LED_DIM_TARGET_OFF;
+            } else {
+                analogWrite(this->mOutputPin, pwmNewVal); 
+            }
         } else {
             this->mDimTarget = PWM_LED_DIM_TARGET_OFF;
         }
