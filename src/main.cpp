@@ -199,7 +199,7 @@ bool switchHandler(const HomieRange& range, const String& value) {
         led.dimPercent(targetVal);
         dimmNode.setProperty("value").send(value);
       } else {
-          log(LEVEL_ERROR, String("MQTT | Unkown percent: '") + String(value) + String( "'"), STATUS_PWM_STARTS);
+          log(LEVEL_ERROR, String("MQTT | Unknown percent: '") + String(value) + String( "'"), STATUS_PWM_STARTS);
       }
   } else {
     log(LEVEL_ERROR, String(value), STATUS_UNKNOWN_CMD);
@@ -413,7 +413,7 @@ void loop() {
                 pPixels->show();
             }
         } else {
-          log(LEVEL_DEBUG,String("Set to ") + String(mShutoffAfterMotion / 1000) + String("s"), STATUS_PWM_FINISHED);
+          log(LEVEL_DEBUG,String("Ready after ") + String(mShutoffAfterMotion / 1000) + String("s"), STATUS_PWM_FINISHED);
           mShutoffAfterMotion = TIME_FADE_DONE;
         }
       }
