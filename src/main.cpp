@@ -378,6 +378,11 @@ void loop() {
         (mLastLedChanges == 0U) ) {
       RainbowCycle(pPixels, &position);
       position++;
+      if (millis() > mShutoffAfterMotion) {
+        log(LEVEL_PWM_FINISHED,String("Initial finished to ") + String(mShutoffAfterMotion, 16) + String("s"), STATUS_PWM_FINISHED);
+        led.dimPercent(0);
+        mShutoffAfterMotion = TIME_FADE_DONE;
+      }
       mLastLedChanges = millis();
     }
   /* the chip has to do something with color */

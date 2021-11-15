@@ -39,6 +39,7 @@
 #define STATUS_PWM_INITIAL      1002
 #define STATUS_PWM_RETRIGGER    1003
 #define STATUS_PWM_FINISHED     1004
+#define STATUS_PWM_UPDATE       1005
 #define STATUS_UNKNOWN_CMD      9000
 
 HomieSetting<long> ledAmount("leds", "Amount of LEDs (of type WS2812); Range 1 to 2047");
