@@ -48,8 +48,8 @@ public:
      * 
      * @param targetValue 
      */
-    void dimPercent(int targetValue);
-
+    void setPercent(int targetValue);
+    int  getPercent(void);
     bool isActivated(void);
 
     void setOff(void);

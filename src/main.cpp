@@ -122,7 +122,7 @@ void loopHandler() {
       if (!somethingReceived) {
         pPixels->clear();
         pPixels->show();
-        led.dimPercent(0);
+        led.setPercent(0);
       }
       somethingReceived = true; // Stop the animation, as a montion was detected */
       
@@ -147,7 +147,7 @@ void loopHandler() {
         /* Activate everything */
         mColorFadingCount = 1;
         if (maxPercent > 0) {
-          led.dimPercent(maxPercent);
+          led.setPercent(maxPercent);
           log(LEVEL_DEBUG,String("PWM starts (" + String(maxPercent) + "%)"), STATUS_PWM_STARTS);
         } else {
           /* At night, deactivate the white LED */
@@ -196,7 +196,7 @@ bool switchHandler(const HomieRange& range, const String& value) {
       int targetVal = value.toInt();
       if ((targetVal >= 0) && (targetVal <= 100)) {
         log(LEVEL_LOG, String("MQTT | Dimm to ") + String(value.toInt()) + String( "%"), STATUS_PWM_STARTS);
-        led.dimPercent(targetVal);
+        led.setPercent(targetVal);
         dimmNode.setProperty("value").send(value);
       } else {
           log(LEVEL_ERROR, String("MQTT | Unknown percent: '") + String(value) + String( "'"), STATUS_PWM_STARTS);
@@ -339,7 +339,7 @@ void setup() {
 #ifdef PIR_ENABLE
   pinMode(GPIO_PIR, INPUT);
 #endif 
-  led.dimPercent(100);
+  led.setPercent(100);
   if (oneWireSensorAvail.get()) {
     sensors.begin();
           for(int j=0; j < TEMP_SENSOR_MEASURE_SERIES && sensors.getDeviceCount() == 0; j++) {
@@ -380,7 +380,7 @@ void loop() {
       position++;
       if (millis() > mShutoffAfterMotion) {
         log(LEVEL_DEBUG,String("Initial finished to ") + String(mShutoffAfterMotion, 16) + String("s"), STATUS_PWM_FINISHED);
-        led.dimPercent(0);
+        led.setPercent(0);
         mShutoffAfterMotion = TIME_FADE_DONE;
       }
       mLastLedChanges = millis();
@@ -398,20 +398,19 @@ void loop() {
       } else {
         /* enough enlightment... deactivate */
         if (led.isActivated() ||
-              (pPixels->getBrightness() > 0) || 
-              (pPixels->getPixelColor(0) > 0) ) {
-          log(LEVEL_INFO,String("Time gone: ") + String((millis() - mShutoffAfterMotion) / 1000) + String("s"), STATUS_PWM_FINISHED);
-          if (led.isActivated()) {
-            /* shutdown again */
-            led.dimPercent(0);
-          }
-          /* colors LEDs are directly powered off */
-          if ((pPixels->getBrightness() > 0) || 
-              (pPixels->getPixelColor(0) > 0) ) {
-                pPixels->fill(pPixels->Color(0,0,0));
-                pPixels->setBrightness(0);
-                pPixels->show();
-            }
+              (pPixels->getBrightness() > 0) ) {
+          log(LEVEL_INFO, String("Time gone: ") + String((millis() - mShutoffAfterMotion) / 1000) + String("s ") + 
+                          String(pPixels->getBrightness()) + String("% ") +
+                          String(led.isActivated()) + String(" PWM activated:") +
+                          String(led.getPercent()) + String("%")
+                          , STATUS_PWM_FINISHED);
+          
+          /* shutdown again */
+          led.setPercent(0);
+                    
+          pPixels->fill(pPixels->Color(0,0,0));
+          pPixels->setBrightness(0);
+          pPixels->show();
         } else {
           log(LEVEL_DEBUG,String("Ready after ") + String(mShutoffAfterMotion / 1000) + String("s"), STATUS_PWM_FINISHED);
           mShutoffAfterMotion = TIME_FADE_DONE;
