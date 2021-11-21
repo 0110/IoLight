@@ -127,10 +127,6 @@ void loopHandler() {
       }
       somethingReceived = true; // Stop the animation, as a montion was detected */
       
-
-      log(LEVEL_DEBUG, String(mShutoffAfterMotion, 16) + String(" ") +
-          String("Fade" + String(mColorFadingCount) + " Time: " + millis() + " left: " + String((mShutoffAfterMotion- millis())/1000) + String("s")), STATUS_MOTION_DETECTED);
-      
       uint32_t color = extractColor(dayColor.get(), strlen(dayColor.get()) );
       int maxPercent = dayPercent.get();
       if ((nightStartHour.get() <= tm.tm_hour) || (tm.tm_hour <= nightEndHour.get()) ) {
@@ -147,18 +143,25 @@ void loopHandler() {
       } else {
         /* Activate everything */
         mColorFadingCount = 1;
-        if (maxPercent > 0) {
-          led.setPercent(maxPercent);
-          log(LEVEL_DEBUG,String("PWM starts (" + String(maxPercent) + "%)"), STATUS_PWM_STARTS);
-        } else {
-          /* At night, deactivate the white LED */
-          ;
-        }
         for( int i = 0; i < ledAmount.get(); i++ ) {
           pPixels->setBrightness(mColorFadingCount);
           pPixels->setPixelColor(i, color);
         }
       }
+
+      /* Handle PWM led */
+      if (maxPercent > 0) {
+        led.setPercent(maxPercent);
+      } else {
+        /* At night, deactivate the white LED */
+        ;
+      }
+
+      log(LEVEL_DEBUG, String(mShutoffAfterMotion, 16) + String(" ") +
+          String("Fade:" + String(maxPercent) + "%" +
+          String("RGB :" + String(mColorFadingCount) + "%") +
+          " Time: " + millis() + " left: " + String((mShutoffAfterMotion- millis())/1000) + String("s")), STATUS_MOTION_DETECTED);
+      
 
       mShutoffAfterMotion = millis() + (minimumActivation.get() * 1000);
       log(LEVEL_DEBUG,String("Update " + String(mShutoffAfterMotion) ), STATUS_PWM_RETRIGGER);
@@ -386,7 +389,7 @@ void loop() {
       RainbowCycle(pPixels, &position);
       position++;
       if (millis() > mShutoffAfterMotion) {
-        log(LEVEL_DEBUG,String("Initial finished to ") + String(mShutoffAfterMotion, 16) + String("s"), STATUS_PWM_FINISHED);
+        log(LEVEL_DEBUG,String("Initial finished to ") + String(mShutoffAfterMotion) + String("s"), STATUS_PWM_FINISHED);
         led.setPercent(0);
         mShutoffAfterMotion = TIME_FADE_DONE;
       }
@@ -409,6 +412,7 @@ void loop() {
           log(LEVEL_INFO, String("Time gone: ") + String((millis() - mShutoffAfterMotion) / 1000) + String("s ") + 
                           String(pPixels->getBrightness()) + String("% ") +
                           String(led.isActivated()) + String(" PWM activated:") +
+                          String(led.getCurrentPwm()) + String("/1023 ") +
                           String(led.getPercent()) + String("%")
                           , STATUS_PWM_FINISHED);
           

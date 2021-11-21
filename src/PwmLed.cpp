@@ -64,7 +64,7 @@ void PwmLED::setPercent(int targetValue) {
 }
 
 int PwmLED::getPercent(void) {
-    return ((this->mDimTarget) * 100U) / PWM_MAXVALUE;
+    return (100UL * (this->mDimTarget) ) / PWM_MAXVALUE;
 }
 
 int PwmLED::getCurrentPwm(void) {
