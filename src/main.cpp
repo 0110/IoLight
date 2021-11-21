@@ -338,6 +338,9 @@ void setup() {
 #endif 
 #ifdef PIR_ENABLE
   pinMode(GPIO_PIR, INPUT);
+
+  // always shutdown LED after controller was started
+  mShutoffAfterMotion = millis() + (minimumActivation.get() * 1000);
 #endif 
   led.setPercent(100);
   if (oneWireSensorAvail.get()) {
@@ -348,8 +351,6 @@ void setup() {
         Serial << "Reset 1-Wire Bus" << endl;
       }
   }
-  // always shutdown LED after controller was started
-  mShutoffAfterMotion = millis() + (minimumActivation.get() * 1000);
 }
 
 void loop() {
