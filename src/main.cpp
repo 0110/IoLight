@@ -65,6 +65,7 @@ HomieNode temperatureNode("temperature", "Temparture", "inside case");
 
 bool mHomieConfigured = false;
 unsigned long mLastLedChanges = 0U;
+int mSentPwmValue = 0;
 bool somethingReceived = false;
 
 unsigned int mButtonPressingCount = 0;        /**< Delay before everything is reset */
@@ -354,6 +355,7 @@ void setup() {
 }
 
 void loop() {
+  static int oddCalled = 0;
   Homie.loop();
   led.loop();
   /* Chip is not configured */
@@ -417,6 +419,15 @@ void loop() {
           mShutoffAfterMotion = TIME_FADE_DONE;
         }
       }
+
+      oddCalled = (oddCalled + 1) % 10;
+      int pwmValue = led.getCurrentPwm();
+      if ((oddCalled == 0) && (mConnected) && /* Update MQTT only every tenth call */
+          (mSentPwmValue != pwmValue)) { 
+        mSentPwmValue = pwmValue;
+        dimmNode.setProperty("value").send(String(((pwmValue * 100U) / PWM_MAXVALUE)));
+      }
+
       mLastLedChanges = millis();
     }
   }

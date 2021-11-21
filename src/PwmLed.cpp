@@ -19,7 +19,6 @@ PwmLED::PwmLED(int pinSensor, int cycleTime, int step) {
 }
 
 void PwmLED::loop(void) {
-    static int oddCalled = 0;
     /* Skip, if the next cycle is not already */
     if (millis() < (mLastLEDupdate + (this->mCycleTime)) ) {
         return;
@@ -28,13 +27,6 @@ void PwmLED::loop(void) {
     if (this->mDimTarget > PWM_LED_DIM_TARGET_OFF) {
         int pwmNewVal = analogRead(this->mOutputPin);
         int pwmValDiff = mDimTarget - pwmNewVal;
-
-        /* FIXME 
-        oddCalled = (oddCalled + 1) % 10;
-        if ((oddCalled == 0) && mConnected) { // Update MQTT only every second call
-          dimmNode.setProperty("value").send(String(((pwmVal * 100U) / PWM_MAXVALUE)));
-        }*/
-
 
         /* Fade in the white light up to maximum 100% */
         if (pwmValDiff > 0) {
@@ -52,6 +44,7 @@ void PwmLED::loop(void) {
             } else {
                 analogWrite(this->mOutputPin, pwmNewVal); 
             }
+            mLastLEDupdate = millis();
         } else {
             this->mDimTarget = PWM_LED_DIM_TARGET_OFF;
         }
@@ -71,6 +64,10 @@ void PwmLED::setPercent(int targetValue) {
 
 int PwmLED::getPercent(void) {
     return this->mDimTarget;
+}
+
+int PwmLED::getCurrentPwm(void) {
+    return analogRead(this->mOutputPin);
 }
 
 void PwmLED::setOff(void) {

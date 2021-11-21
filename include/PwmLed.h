@@ -25,7 +25,7 @@ private:
     int mStep = 0;
     /* local variables */
     int mDimTarget = PWM_LED_DIM_TARGET_OFF;
-    int mLastLEDupdate = 0;
+    unsigned long mLastLEDupdate = 0;
     
 public:
     
@@ -50,6 +50,7 @@ public:
      */
     void setPercent(int targetValue);
     int  getPercent(void);
+    int  getCurrentPwm(void);
     bool isActivated(void);
 
     void setOff(void);
