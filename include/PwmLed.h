@@ -25,6 +25,7 @@ private:
     int mStep = 0;
     /* local variables */
     int mDimTarget = PWM_LED_DIM_TARGET_OFF;
+    int mDimValue = PWM_LED_DIM_TARGET_OFF;
     unsigned long mLastLEDupdate = 0;
     
 public:

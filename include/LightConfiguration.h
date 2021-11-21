@@ -31,6 +31,7 @@
 #define LEVEL_INFO              3
 #define LEVEL_DEBUG             4
 #define LEVEL_LOG               5
+#define STATUS_MQTT_DETECTED    100
 #define STATUS_MOTION_DETECTED  1000
 #define STATUS_MOTION_CHANGED    999
 #define STATUS_PWM_STARTS       1001

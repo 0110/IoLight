@@ -25,7 +25,7 @@ void PwmLED::loop(void) {
     }
 
     if (this->mDimTarget > PWM_LED_DIM_TARGET_OFF) {
-        int pwmNewVal = analogRead(this->mOutputPin);
+        int pwmNewVal = mDimValue;
         int pwmValDiff = mDimTarget - pwmNewVal;
 
         /* Fade in the white light up to maximum 100% */
@@ -38,12 +38,13 @@ void PwmLED::loop(void) {
 
         if ((pwmValDiff > 0) || (pwmValDiff < 0)) {
             if (pwmNewVal < 0) {
-                analogWrite(this->mOutputPin, 0);
+                mDimValue = 0;
             } else if(pwmNewVal > PWM_MAXVALUE) {
-                analogWrite(this->mOutputPin, PWM_MAXVALUE);
+                mDimValue = PWM_MAXVALUE;
             } else {
-                analogWrite(this->mOutputPin, pwmNewVal); 
+                mDimValue = pwmNewVal;
             }
+            analogWrite(this->mOutputPin, mDimValue); 
             mLastLEDupdate = millis();
         } else {
             this->mDimTarget = PWM_LED_DIM_TARGET_OFF;
@@ -53,7 +54,7 @@ void PwmLED::loop(void) {
 }
 
 bool PwmLED::isActivated(void) {
-    return (analogRead(this->mOutputPin) > 0);
+    return (mDimValue > 0);
 }
 
 void PwmLED::setPercent(int targetValue) {
@@ -63,17 +64,19 @@ void PwmLED::setPercent(int targetValue) {
 }
 
 int PwmLED::getPercent(void) {
-    return this->mDimTarget;
+    return ((this->mDimTarget) * 100U) / PWM_MAXVALUE;
 }
 
 int PwmLED::getCurrentPwm(void) {
-    return analogRead(this->mOutputPin);
+    return mDimValue;
 }
 
 void PwmLED::setOff(void) {
-  analogWrite(this->mOutputPin, 0); // activate LED with 0%
+  mDimValue = 0; // activate LED with 0%
+  analogWrite(this->mOutputPin, mDimValue);
 }
 
 void PwmLED::setOn(void) {
-    analogWrite(this->mOutputPin, PWM_MAXVALUE); // activate LED with 0%
+    mDimValue = PWM_MAXVALUE; // activate LED with 0%
+    analogWrite(this->mOutputPin, mDimValue);
 }

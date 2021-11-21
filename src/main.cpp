@@ -206,6 +206,7 @@ bool switchHandler(const HomieRange& range, const String& value) {
     log(LEVEL_ERROR, String(value), STATUS_UNKNOWN_CMD);
   }
   somethingReceived = true; // Stop animation
+  log(LEVEL_DEBUG, "Received switch command", STATUS_MQTT_DETECTED);
   return true;
 }
 
@@ -213,6 +214,7 @@ bool allLedsHandler(const HomieRange& range, const String& value) {
   if (range.isRange) return false;  // only one switch is present
 
   somethingReceived = true; // Stop animation
+  log(LEVEL_DEBUG, "Received rgb command", STATUS_MQTT_DETECTED);
 
   int sep1 = value.indexOf(',');
   int sep2 = value.indexOf(',', sep1 + 1);
@@ -242,6 +244,7 @@ bool lightOnHandler(const HomieRange& range, const String& value) {
   if (range.index < 1 || range.index > ledAmount.get()) return false;  // if it's not a valid range
 
   somethingReceived = true; // Stop animation
+  log(LEVEL_DEBUG, "Received light command", STATUS_MQTT_DETECTED);
 
   if (pPixels == NULL) {
     return false;
@@ -343,7 +346,6 @@ void setup() {
   // always shutdown LED after controller was started
   mShutoffAfterMotion = millis() + (minimumActivation.get() * 1000);
 #endif 
-  led.setPercent(100);
   if (oneWireSensorAvail.get()) {
     sensors.begin();
           for(int j=0; j < TEMP_SENSOR_MEASURE_SERIES && sensors.getDeviceCount() == 0; j++) {
@@ -352,6 +354,8 @@ void setup() {
         Serial << "Reset 1-Wire Bus" << endl;
       }
   }
+  led.setPercent(100);
+  Serial << "PWM  LED dimming to " << (led.getPercent()) << " %" << endl;
 }
 
 void loop() {
