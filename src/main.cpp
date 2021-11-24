@@ -276,11 +276,11 @@ void setup() {
   Homie_setFirmware("light", FIRMWARE_VERSION);
   Homie.setLoopFunction(loopHandler);
   Homie.onEvent(onHomieEvent);
-  ledNode.advertise("led").setName("Each Leds").setDatatype("Colour").setUnit("rgb")
+  ledNode.advertise("led").setName("Each Leds").setDatatype("color").setFormat("hsv")
                             .settable(lightOnHandler);
   monitor.advertise("motion").setName("Monitor motion").setDatatype("Boolean");
   oneLedNode.advertise("ambient").setName("All Leds")
-                            .setDatatype("colorRGB").setUnit("rgb")
+                            .setDatatype("color").setFormat("hsv")
                             .settable(allLedsHandler);
   lampNode.advertise("value").setName("Value")
                                       .setDatatype("Boolean")
