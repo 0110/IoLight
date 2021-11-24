@@ -57,11 +57,11 @@ DallasTemperature sensors(&oneWire);
 float mLastTemperatur = -10.0f;
 
 HomieNode ledNode("strip", "Strip", "strip", true, 1, NUMBER_LEDS);
-HomieNode oneLedNode /* to rule them all */("led", "RGB led", "all leds");
-HomieNode lampNode("lamp", "Lamp switch", "White lamp On-Off");
-HomieNode dimmNode("dimm", "Lamp Dimmed", "White lamp can be dimmed");
-HomieNode monitor("monitor", "Monitor motion", "Monigor motion via PIR");
-HomieNode temperatureNode("temperature", "Temparture", "inside case");
+HomieNode oneLedNode /* to rule them all */("led", "RGB led", "color");
+HomieNode lampNode("lamp", "Lamp switch", "switch");
+HomieNode dimmNode("dimm", "Lamp Dimmed", "dimmer");
+HomieNode monitor("monitor", "Monitor motion", "contact");
+HomieNode temperatureNode("temperature", "Temparture", "number");
 
 bool mHomieConfigured = false;
 unsigned long mLastLedChanges = 0U;
@@ -280,7 +280,7 @@ void setup() {
                             .settable(lightOnHandler);
   monitor.advertise("motion").setName("Monitor motion").setDatatype("Boolean");
   oneLedNode.advertise("ambient").setName("All Leds")
-                            .setDatatype("Colour").setUnit("rgb")
+                            .setDatatype("colorRGB").setUnit("rgb")
                             .settable(allLedsHandler);
   lampNode.advertise("value").setName("Value")
                                       .setDatatype("Boolean")
