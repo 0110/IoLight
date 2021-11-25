@@ -221,17 +221,18 @@ bool allLedsHandler(const HomieRange& range, const String& value) {
 
   int sep1 = value.indexOf(',');
   int sep2 = value.indexOf(',', sep1 + 1);
-  /*FIXME add here the code to change the color */
-  int hue = value.substring(0,sep1).toInt(); /* OpenHAB  hue (0-360°) */
-  int satu = value.substring(sep1 + 1, sep2).toInt(); /* OpenHAB saturation (0-100%) */
-  int bright = value.substring(sep2 + 1, value.length()).toInt(); /* brightness (0-100%) */
+  int red = value.substring(0,sep1).toInt(); /* OpenHAB  hue (0-360°) */
+  int green = value.substring(sep1 + 1, sep2).toInt(); /* OpenHAB saturation (0-100%) */
+  int blue = value.substring(sep2 + 1, value.length()).toInt(); /* brightness (0-100%) */
+
+  uint8_t r = (red * 255) / 250;
+  uint8_t g = (green *255) / 250;
+  uint8_t b = (blue *255) / 250;
+
 
   if (pPixels) {
-    uint8_t c = pPixels->ColorHSV(65535 * hue / 360, 255 * satu / 100, 255 * bright / 100);
-    pPixels->clear();  // Initialize all pixels to 'off'
-    for( int i = 0; i < ledAmount.get(); i++ ) {
-        pPixels->setPixelColor(i, c);
-    }
+    uint32_t c = pPixels->Color(r,g,b);
+    pPixels->fill(c);
     pPixels->show();   // make sure it is visible
     if (mConnected) {
       oneLedNode.setProperty("ambient").send(String(value));
@@ -247,20 +248,26 @@ bool lightOnHandler(const HomieRange& range, const String& value) {
   if (range.index < 1 || range.index > ledAmount.get()) return false;  // if it's not a valid range
 
   somethingReceived = true; // Stop animation
+  mShutoffAfterMotion = TIME_FADE_DONE;
+
   log(LEVEL_DEBUG, "Received light command", STATUS_MQTT_DETECTED);
 
-  if (pPixels == NULL) {
-    return false;
+  if (pPixels != NULL) {
+    pPixels->clear();  // Initialize all pixels to 'off'
+    if (value == "off" || value == "Off" || value == "OFF") {
+        pPixels->setPixelColor(range.index - 1, pPixels->ColorHSV(0, 0, 0));
+    } else {
+      /* Parse the color */
+      pPixels->setPixelColor(range.index - 1, extractColor(value.c_str(), value.length()));
+    }
+    pPixels->show();   // make sure it is visible
   }
 
-  pPixels->clear();  // Initialize all pixels to 'off'
   if (value == "off" || value == "Off" || value == "OFF") {
-      pPixels->setPixelColor(range.index - 1, pPixels->ColorHSV(0, 0, 0));
+    led.setOff();
   } else {
-    /* Parse the color */
-    pPixels->setPixelColor(range.index - 1, extractColor(value.c_str(), value.length()));
+    led.setOn();
   }
-  pPixels->show();   // make sure it is visible
 
   ledNode.setProperty("led").setRange(range).send(value);  // Update the state of the led
   Homie.getLogger() << "Led " << range.index << " is " << value << endl;
@@ -276,11 +283,11 @@ void setup() {
   Homie_setFirmware("light", FIRMWARE_VERSION);
   Homie.setLoopFunction(loopHandler);
   Homie.onEvent(onHomieEvent);
-  ledNode.advertise("led").setName("Each Leds").setDatatype("color").setFormat("hsv")
+  ledNode.advertise("led").setName("Each Leds").setDatatype("color").setFormat("rgb")
                             .settable(lightOnHandler);
   monitor.advertise("motion").setName("Monitor motion").setDatatype("Boolean");
   oneLedNode.advertise("ambient").setName("All Leds")
-                            .setDatatype("color").setFormat("hsv")
+                            .setDatatype("color").setFormat("rgb")
                             .settable(allLedsHandler);
   lampNode.advertise("value").setName("Value")
                                       .setDatatype("Boolean")
