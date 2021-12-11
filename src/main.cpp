@@ -56,7 +56,6 @@ PwmLED led(GPIO_LED, FADE_INTERVAL, PWM_STEP);
 DallasTemperature sensors(&oneWire);
 float mLastTemperatur = -10.0f;
 
-HomieNode ledNode("strip", "Strip", "strip", true, 1, NUMBER_LEDS);
 HomieNode oneLedNode /* to rule them all */("led", "RGB led", "color");
 HomieNode lampNode("lamp", "Lamp switch", "switch");
 HomieNode dimmNode("dimm", "Lamp Dimmed", "dimmer");
@@ -269,7 +268,6 @@ bool lightOnHandler(const HomieRange& range, const String& value) {
     led.setOn();
   }
 
-  ledNode.setProperty("led").setRange(range).send(value);  // Update the state of the led
   Homie.getLogger() << "Led " << range.index << " is " << value << endl;
 
   return true;
@@ -283,8 +281,6 @@ void setup() {
   Homie_setFirmware("light", FIRMWARE_VERSION);
   Homie.setLoopFunction(loopHandler);
   Homie.onEvent(onHomieEvent);
-  ledNode.advertise("led").setName("Each Leds").setDatatype("color").setFormat("rgb")
-                            .settable(lightOnHandler);
   monitor.advertise("motion").setName("Monitor motion").setDatatype("Boolean");
   oneLedNode.advertise("ambient").setName("All Leds")
                             .setDatatype("color").setFormat("rgb")
