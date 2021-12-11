@@ -46,6 +46,10 @@ void PwmLED::loop(void) {
             }
             analogWrite(this->mOutputPin, mDimValue); 
             mLastLEDupdate = millis();
+        } else if ((mDimValue > 0) && (pwmNewVal < PWM_MINSTEP)) {
+            /* close to shutdown; deactivate the light completly */
+            mDimValue = 0;
+            analogWrite(this->mOutputPin, mDimValue); 
         } else {
             this->mDimTarget = PWM_LED_DIM_TARGET_OFF;
         }
