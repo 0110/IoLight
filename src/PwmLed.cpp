@@ -36,7 +36,7 @@ void PwmLED::loop(void) {
             pwmNewVal -= this->mStep;
         }
 
-        if ((pwmValDiff > 0) || (pwmValDiff < 0)) {
+        if ((pwmValDiff > PWM_MINSTEP) || (pwmValDiff < (-PWM_MINSTEP))) {
             if (pwmNewVal < 0) {
                 mDimValue = 0;
             } else if(pwmNewVal > PWM_MAXVALUE) {
@@ -49,7 +49,6 @@ void PwmLED::loop(void) {
         } else {
             this->mDimTarget = PWM_LED_DIM_TARGET_OFF;
         }
-
     }   
 }
 
