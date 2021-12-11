@@ -60,7 +60,9 @@ HomieNode oneLedNode /* to rule them all */("led", "RGB led", "color");
 HomieNode lampNode("lamp", "Lamp switch", "switch");
 HomieNode dimmNode("dimm", "Lamp Dimmed", "dimmer");
 HomieNode monitor("monitor", "Monitor motion", "contact");
+#ifdef TEMP_ENABLE
 HomieNode temperatureNode("temperature", "Temparture", "number");
+#endif
 
 bool mHomieConfigured = false;
 unsigned long mLastLedChanges = 0U;
@@ -168,6 +170,7 @@ void loopHandler() {
   }
 #endif
 
+#ifdef TEMP_ENABLE
   if (oneWireSensorAvail.get()) {
       int sensorCount = sensors.getDeviceCount();
       if (sensorCount > 0)
@@ -182,6 +185,7 @@ void loopHandler() {
         }
       }
   }
+#endif
 
   // Feed the dog -> ESP stay alive
   ESP.wdtFeed();
@@ -292,10 +296,11 @@ void setup() {
                                       .setDatatype("Integer")
                                       .setUnit("%")
                                       .settable(switchHandler);
+#ifdef TEMP_ENABLE
   temperatureNode.advertise(NODE_TEMPERATUR).setName("Degrees")
                                       .setDatatype("Float")
                                       .setUnit("ºC");                                      
-
+#endif
 
   // Load the settings and  set default values
   ledAmount.setDefaultValue(NUMBER_LEDS).setValidator([] (long candidate) {
@@ -325,9 +330,11 @@ void setup() {
   });
   ntpServer.setDefaultValue("pool.ntp.org");
 #endif
+#ifdef TEMP_ENABLE
   oneWireSensorAvail.setDefaultValue(false).setValidator([] (int candidate) {
     return true;
   });
+#endif
 
   Homie.setup();
   mHomieConfigured = Homie.isConfigured();
@@ -351,7 +358,8 @@ void setup() {
 
   // always shutdown LED after controller was started
   mShutoffAfterMotion = millis() + (minimumActivation.get() * 1000);
-#endif 
+#endif
+#ifdef TEMP_ENABLE 
   if (oneWireSensorAvail.get()) {
     sensors.begin();
           for(int j=0; j < TEMP_SENSOR_MEASURE_SERIES && sensors.getDeviceCount() == 0; j++) {
@@ -360,6 +368,7 @@ void setup() {
         Serial << "Reset 1-Wire Bus" << endl;
       }
   }
+#endif
   led.setPercent(100);
   Serial << "PWM  LED dimming to " << (led.getPercent()) << " %" << endl;
 }
