@@ -57,9 +57,14 @@ Upload this new generated filesystem with:
 * D1: WS2812 RGB LEDs
 * D0: Button
 * D2: N-Channel Mosfet (e.g. LL2705)
+
+## Optional Temperatur
+
 * D7: One-Wire temperature sensor (DS 18B20)
 
-## Optional
+Must be activated in the firmware with **TEMP_ENABLE**
+
+## Optional Motion
 * D6: IR PIR motion sensor (needs pull-down resistor)
 
 Must be activated in the firmware with **PIR_ENABLE**
