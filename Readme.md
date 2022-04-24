@@ -27,7 +27,16 @@ And the following Librarys in Visual Studio Code:
 * Neo Pixel (from Adafruit)
  
 ### Windows
-To be done
+** Not working **
+
+Compiler generates unbootable image.
+
+Workaround:
+* Generate Ubuntu VM and follow setup above inside
+* copy ```firmware.bin``` from VM to Windows
+* Install python & pip
+* ```pip3 install esptool```
+* ```./esptool.py.exe write_flash 0x0000 firmware.bin```
 
 ## Development
 * File
