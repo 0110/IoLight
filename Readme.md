@@ -27,7 +27,7 @@ And the following Librarys in Visual Studio Code:
 * Neo Pixel (from Adafruit)
  
 ### Windows
-** Not working **
+**Not working**
 
 Compiler generates unbootable image.
 
