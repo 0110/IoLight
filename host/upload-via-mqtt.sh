@@ -1,10 +1,13 @@
 #!//bin/bash
 
-if [ $# -ne 3 ]; then
+if [ $# -lt 3 ]; then
 	echo "Homie prefex and device index must be specified:"
-	echo "$0 <mqtt host> <prefix> <device index>"
+	echo "$0 <mqtt host> <prefix> <device index> (mqtt user)"
 	echo "e.g."
 	echo "$0 192.168.0.2 test/ MyDeviceId"
+	echo "or"
+	echo "$0 192.168.0.2 test/ MyDeviceId user1"
+	echo "Password of user is requested inside this script"
 	exit 1
 fi
 
@@ -41,9 +44,19 @@ if [ $? -ne 0 ]; then
 	fi
 fi
 
+# Handle MQTT authentication
+MOSQUITTO_AUTH=""
+OTA_AUTH=""
+if [ $# -eq 4 ]; then
+ mqttUser=$4
+ echo "Enter password for $mqttUser on $mqttHost"
+ read mqttPasswd
+ MOSQUITTO_AUTH=" -u $mqttUser -P $mqttPasswd" 
+ OTA_AUTH=" -u $mqttUser -d $mqttPasswd"
+fi
 
 echo "Waiting for $homieId ..."
-mosquitto_sub -h $mqttHost -t "${mqttPrefix}${homieId}/#" -R -C 1
-$PYTHONCMD ota_updater.py -l $mqttHost -t "$mqttPrefix" -i "$homieId" $firmwareFile
+mosquitto_sub -h $mqttHost $MOSQUITTO_AUTH -t "${mqttPrefix}${homieId}/#" -R -C 1
+$PYTHONCMD ota_updater.py -l $mqttHost $OTA_AUTH -t "$mqttPrefix" -i "$homieId" $firmwareFile
 
 exit 0
