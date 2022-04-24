@@ -15,11 +15,35 @@ firmwareFile=../.pio/build/nodemcuv2/firmware.bin
 
 if [ ! -f $firmwareFile ]; then
 	echo "the script $0 must be started in host/ sub directory"
+	echo "and firmware must be compiled"
 	exit 2
 fi
 
+# check for required tools
+command -v mosquitto_sub >> /dev/null
+if [ $? -ne 0 ]; then
+ echo "mosquitto_sub missing"
+ echo ""
+ echo "install with .e.g. apt : apt install mosquitto-clients"
+ exit 3
+fi
+
+PYTHONCMD=python
+command -v $PYTHONCMD >> /dev/null
+if [ $? -ne 0 ]; then
+	PYTHONCMD=python3
+	command -v $PYTHONCMD >> /dev/null
+	if [ $? -ne 0 ]; then
+		echo "No python found:"
+		whereis python
+		whereis python3
+		exit 4
+	fi
+fi
+
+
 echo "Waiting for $homieId ..."
 mosquitto_sub -h $mqttHost -t "${mqttPrefix}${homieId}/#" -R -C 1
-python ota_updater.py -l $mqttHost -t "$mqttPrefix" -i "$homieId" $firmwareFile
+$PYTHONCMD ota_updater.py -l $mqttHost -t "$mqttPrefix" -i "$homieId" $firmwareFile
 
 exit 0
