@@ -74,6 +74,8 @@ unsigned int mColorFadingCount = FADE_MAXVALUE;
 bool mLastMotion=false;
 unsigned long mShutoffAfterMotion = TIME_UNDEFINED;     /**< Time, when LED has to be deactivated after motion */
 bool mConnected = false;
+    
+uint8_t mRainbowPosition = 1; /**< Index, used for animated rainbow (<code>0</code> deactivates it)*/
 
 /******************************************************************************
  *                            LOCAL FUNCTIONS
@@ -95,6 +97,42 @@ void onHomieEvent(const HomieEvent &event)
   default:
     break;
   }
+}
+
+int setRgbColor(tm* tm) {      
+      uint32_t color = extractColor(dayColor.get(), strlen(dayColor.get()) );
+      int maxPercent = dayPercent.get();
+
+      if ((tm != NULL) &&
+          ((nightStartHour.get() <= tm->tm_hour) || (tm->tm_hour <= nightEndHour.get()) ) 
+          ) {
+          color = extractColor(nightColor.get(), strlen(nightColor.get()) );
+          maxPercent = nightPercent.get();
+          oneLedNode.setProperty("ambient").send(String(nightColor.get()));
+      } else {
+        oneLedNode.setProperty("ambient").send(String(dayColor.get()));
+      }
+
+      // check, if dayColor or nightcolor has the value "Decativated"
+      if (color == 0U) {
+        mColorFadingCount = 0;  
+      } else {
+        /* Activate everything */
+        mColorFadingCount = 1;
+        for( int i = 0; i < ledAmount.get(); i++ ) {
+          pPixels->setBrightness(mColorFadingCount);
+          pPixels->setPixelColor(i, color);
+        }
+      }
+
+      /* Handle PWM led */
+      if (maxPercent > 0) {
+        led.setPercent(maxPercent);
+      } else {
+        /* At night, deactivate the white LED */
+        ;
+      }
+      return maxPercent;
 }
 
 void loopHandler() {
@@ -127,36 +165,8 @@ void loopHandler() {
         led.setPercent(0);
       }
       somethingReceived = true; // Stop the animation, as a montion was detected */
-      
-      uint32_t color = extractColor(dayColor.get(), strlen(dayColor.get()) );
-      int maxPercent = dayPercent.get();
-      if ((nightStartHour.get() <= tm.tm_hour) || (tm.tm_hour <= nightEndHour.get()) ) {
-          color = extractColor(nightColor.get(), strlen(nightColor.get()) );
-          maxPercent = nightPercent.get();
-          oneLedNode.setProperty("ambient").send(String(nightColor.get()));
-      } else {
-        oneLedNode.setProperty("ambient").send(String(dayColor.get()));
-      }
 
-      // check, if dayColor or nightcolor has the value "Decativated"
-      if (color == 0U) {
-        mColorFadingCount = 0;  
-      } else {
-        /* Activate everything */
-        mColorFadingCount = 1;
-        for( int i = 0; i < ledAmount.get(); i++ ) {
-          pPixels->setBrightness(mColorFadingCount);
-          pPixels->setPixelColor(i, color);
-        }
-      }
-
-      /* Handle PWM led */
-      if (maxPercent > 0) {
-        led.setPercent(maxPercent);
-      } else {
-        /* At night, deactivate the white LED */
-        ;
-      }
+      int maxPercent = setRgbColor(&tm);
 
       log(LEVEL_DEBUG, String(mShutoffAfterMotion, 16) + String(" ") +
           String("Fade:" + String(maxPercent) + "%" +
@@ -395,20 +405,33 @@ void loop() {
 
   /* No input, chip is in IDLE mode */
   } else if (!somethingReceived) {
-    static uint8_t position = 0;
     if ( ((millis() - mLastLedChanges) >= FADE_INTERVAL) ||
         (mLastLedChanges == 0U) ) {
-      RainbowCycle(pPixels, &position);
-      position++;
+      RainbowCycle(pPixels, &mRainbowPosition);
+      if (mRainbowPosition < 254)
+      {
+        mRainbowPosition++;
+      } else {
+        mRainbowPosition = 1;
+      }
+
       if (millis() > mShutoffAfterMotion) {
         log(LEVEL_DEBUG,String("Initial finished to ") + String(mShutoffAfterMotion) + String("s"), STATUS_PWM_FINISHED);
         led.setPercent(0);
+        pPixels->setBrightness(0);
+        pPixels->show();
         mShutoffAfterMotion = TIME_FADE_DONE;
       }
       mLastLedChanges = millis();
     }
   /* the chip has to do something with color */
   } else {
+    /* Execute this at the first time to deactivate the rainbow animation */
+    if (mRainbowPosition != 0) {
+      mRainbowPosition = 0;
+      setRgbColor(NULL);
+    }
+
     if ((millis() - mLastLedChanges) >= FADE_INTERVAL) {
       /* LEDs are in the configured time frame, where they must be activated */
       if (millis() < mShutoffAfterMotion) {
