@@ -513,6 +513,8 @@ void loop() {
       if (LOW == mButtonLastState) {
         led.toggle();
         log(LEVEL_DEBUG, "Button triggered", STATUS_HARDWARE_BUTTON);
+        pPixels->clear();  // Initialize all pixels to 'off'
+        pPixels->show();   // make sure it is visible
       }
     } 
   }
