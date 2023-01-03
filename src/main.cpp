@@ -518,7 +518,6 @@ void loop() {
   }
   else 
   {
-    led.setOff();
     if (mButtonPressingCount > 0) {
       /* shutoff the LEDs */
       for( int i = 0; i < ledAmount.get(); i++ ) {
