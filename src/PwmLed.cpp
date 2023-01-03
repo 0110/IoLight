@@ -83,3 +83,11 @@ void PwmLED::setOn(void) {
     mDimValue = PWM_MAXVALUE; // activate LED with 0%
     analogWrite(this->mOutputPin, mDimValue);
 }
+
+void PwmLED::toggle(void) {
+    if (isActivated()) {
+        setOff();
+    } else {
+        setOn();
+    }
+}

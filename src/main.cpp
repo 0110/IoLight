@@ -72,6 +72,7 @@ bool somethingReceived = false;
 unsigned int mButtonPressingCount = 0;        /**< Delay before everything is reset */
 unsigned int mColorFadingCount = FADE_MAXVALUE;
 bool mLastMotion=false;
+bool mButtonLastState=false;
 unsigned long mShutoffAfterMotion = TIME_UNDEFINED;     /**< Time, when LED has to be deactivated after motion */
 bool mConnected = false;
     
@@ -99,7 +100,8 @@ void onHomieEvent(const HomieEvent &event)
   }
 }
 
-int setRgbColor(tm* tm) {      
+int setRgbColor(tm* tm) {  
+  #ifdef PIR_ENABLE    
       uint32_t color = extractColor(dayColor.get(), strlen(dayColor.get()) );
       int maxPercent = dayPercent.get();
 
@@ -133,6 +135,9 @@ int setRgbColor(tm* tm) {
         ;
       }
       return maxPercent;
+      #else
+      return 0;
+      #endif
 }
 
 void loopHandler() {
@@ -505,28 +510,15 @@ void loop() {
   // Use Flash button to reset configuration
   if (digitalRead(GPIO_BUTTON) == HIGH) {
     if (mHomieConfigured) {
-      if (mButtonPressingCount > RESET_TRIGGER) {
-        /* shutoff the LEDs */
-        for( int i = 0; i < ledAmount.get(); i++ ) {
-            pPixels->setPixelColor(i, pPixels->Color(128 /*red */, 0 /* green */, 0 /* blue */));
-        }
-        pPixels->show();   // make sure it is visible
-        if (SPIFFS.exists ("/homie/config.json") ) 
-        { 
-          Serial << "Delete Configuration" << endl;
-          SPIFFS.remove("/homie/config.json");
-        }
-        SPIFFS.end();
-      } else {
-        uint8_t position = (uint8_t) (mButtonPressingCount * 255 / RESET_TRIGGER);
-        RainbowCycle(pPixels, &position);
-        Serial << mButtonPressingCount << "/" << RESET_TRIGGER << " to reset" << endl;
-        mButtonPressingCount++;
+      if (LOW == mButtonLastState) {
+        led.toggle();
+        log(LEVEL_DEBUG, "Button triggered", STATUS_HARDWARE_BUTTON);
       }
     } 
   }
   else 
   {
+    led.setOff();
     if (mButtonPressingCount > 0) {
       /* shutoff the LEDs */
       for( int i = 0; i < ledAmount.get(); i++ ) {
@@ -536,6 +528,7 @@ void loop() {
       mButtonPressingCount = 0;
     }
   }
+  mButtonLastState = digitalRead(GPIO_BUTTON);
 #endif  
 
 }
