@@ -100,11 +100,11 @@ void onHomieEvent(const HomieEvent &event)
 #ifndef NOBUTTON
   /* Send status information at start, based on Button input */
   if (digitalRead(GPIO_BUTTON) == HIGH) {
-    lampNode.setProperty("value").send("on");
-    dimmNode.setProperty("value").send(String("100"));
+    lampNode.setProperty("value").send(HOMIE_TRUE);
+    dimmNode.setProperty("value").send(String(HOMIE_PERCENT_MAX));
   } else {
-    lampNode.setProperty("value").send("off");
-    dimmNode.setProperty("value").send(String("0"));
+    lampNode.setProperty("value").send(HOMIE_FALSE);
+    dimmNode.setProperty("value").send(String(HOMIE_PERCENT_MIN));
   }
 #endif
   mConnected = true;
@@ -171,7 +171,7 @@ void loopHandler() {
     if (!mConnected || (tm.tm_year < 100)) { /* < 2000 as tm_year + 1900 is the year */
       return;
     }
-    monitor.setProperty("motion").send(String(mLastMotion ? "true" : "false"));
+    monitor.setProperty("motion").send(String(mLastMotion ? HOMIE_TRUE : HOMIE_FALSE));
     
     if (mLastMotion == HIGH) {
       
@@ -235,9 +235,9 @@ bool switchHandler(const HomieRange& range, const String& value) {
         led.setPercent(targetVal);
         dimmNode.setProperty("value").send(value);
         if (targetVal == 0) {
-          lampNode.setProperty("value").send("off");
+          lampNode.setProperty("value").send(HOMIE_FALSE);
         } else {
-          lampNode.setProperty("value").send("on");
+          lampNode.setProperty("value").send(HOMIE_TRUE);
         }
       } else {
           log(LEVEL_ERROR, String("MQTT | Unknown percent: '") + String(value) + String( "'"), STATUS_PWM_STARTS);

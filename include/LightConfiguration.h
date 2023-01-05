@@ -20,6 +20,11 @@
 #define TIME_UNDEFINED  0xFFFFFFFFU
 #define TIME_FADE_DONE  0xFFFFFFFEU
 
+#define HOMIE_TRUE      "true"
+#define HOMIE_FALSE     "false"
+#define HOMIE_PERCENT_MIN   0
+#define HOMIE_PERCENT_MAX   100
+
 #define GPIO_BUTTON     D6  /**< Input button */
 #define GPIO_WS2812     D1  /**< RGB LEDs */
 #define GPIO_PIR        D5  /**< Passive infrared sensor */
