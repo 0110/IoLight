@@ -326,21 +326,21 @@ void setup() {
   });
 
   #ifdef PIR_ENABLE
-  monitor.advertise("motion").setName("Monitor motion").setDatatype("Boolean");
+  monitor.advertise("motion").setName("Monitor motion").setDatatype("boolean");
   #endif
   oneLedNode.advertise("ambient").setName("All Leds")
                             .setDatatype("color").setFormat("rgb")
                             .settable(allLedsHandler);
   lampNode.advertise("value").setName("Value")
-                                      .setDatatype("Boolean")
+                                      .setDatatype("boolean")
                                       .settable(switchHandler);
   dimmNode.advertise("value").setName("Dimmer")
-                                      .setDatatype("Integer")
+                                      .setDatatype("integer")
                                       .setUnit("%")
                                       .settable(switchHandler);
 #ifdef TEMP_ENABLE
   temperatureNode.advertise(NODE_TEMPERATUR).setName("Degrees")
-                                      .setDatatype("Float")
+                                      .setDatatype("float")
                                       .setUnit("ºC");                                      
 #endif
 
