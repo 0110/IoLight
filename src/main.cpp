@@ -59,7 +59,9 @@ float mLastTemperatur = -10.0f;
 HomieNode oneLedNode /* to rule them all */("led", "RGB led", "color");
 HomieNode lampNode("lamp", "Lamp switch", "switch");
 HomieNode dimmNode("dimm", "Lamp Dimmed", "dimmer");
+#ifdef PIR_ENABLE
 HomieNode monitor("monitor", "Monitor motion", "contact");
+#endif
 #ifdef TEMP_ENABLE
 HomieNode temperatureNode("temperature", "Temparture", "number");
 #endif
@@ -94,7 +96,18 @@ void onHomieEvent(const HomieEvent &event)
     Serial.printf("NTP Setup with server %s\r\n", ntpServer.get());
     configTime(0, 0, ntpServer.get());
 #endif
-    mConnected = true;
+
+#ifndef NOBUTTON
+  /* Send status information at start, based on Button input */
+  if (digitalRead(GPIO_BUTTON) == HIGH) {
+    lampNode.setProperty("value").send("on");
+    dimmNode.setProperty("value").send(String("100"));
+  } else {
+    lampNode.setProperty("value").send("off");
+    dimmNode.setProperty("value").send(String("0"));
+  }
+#endif
+  mConnected = true;
   default:
     break;
   }
@@ -160,8 +173,7 @@ void loopHandler() {
     }
     monitor.setProperty("motion").send(String(mLastMotion ? "true" : "false"));
     
-    if ((mLastMotion == HIGH) && 
-        (mShutoffAfterMotion == TIME_FADE_DONE)) {
+    if (mLastMotion == HIGH) {
       
       /* clear LEDs */
       if (!somethingReceived) {
@@ -211,15 +223,22 @@ bool switchHandler(const HomieRange& range, const String& value) {
   if (value == "off" || value == "Off" || value == "OFF" || value == "false") {
     led.setOff();
     dimmNode.setProperty("value").send(value);
+    lampNode.setProperty("value").send(value);
   } else if (value == "on" || value == "On" || value == "ON" || value == "true") {
     led.setOn();
     dimmNode.setProperty("value").send(value);
+    lampNode.setProperty("value").send(value);
   } else if ( value.length() > 0 && isDigit(value.charAt(0))  ) {
       int targetVal = value.toInt();
       if ((targetVal >= 0) && (targetVal <= 100)) {
         log(LEVEL_LOG, String("MQTT | Dimm to ") + String(value.toInt()) + String( "%"), STATUS_PWM_STARTS);
         led.setPercent(targetVal);
         dimmNode.setProperty("value").send(value);
+        if (targetVal == 0) {
+          lampNode.setProperty("value").send("off");
+        } else {
+          lampNode.setProperty("value").send("on");
+        }
       } else {
           log(LEVEL_ERROR, String("MQTT | Unknown percent: '") + String(value) + String( "'"), STATUS_PWM_STARTS);
       }
@@ -300,7 +319,10 @@ void setup() {
   Homie_setFirmware("light", FIRMWARE_VERSION);
   Homie.setLoopFunction(loopHandler);
   Homie.onEvent(onHomieEvent);
+
+  #ifdef PIR_ENABLE
   monitor.advertise("motion").setName("Monitor motion").setDatatype("Boolean");
+  #endif
   oneLedNode.advertise("ambient").setName("All Leds")
                             .setDatatype("color").setFormat("rgb")
                             .settable(allLedsHandler);
@@ -378,7 +400,11 @@ void setup() {
       }
   }
 #endif
-  led.setOff();
+/* Always activate all LEDs if not controllable */
+#ifdef NOBUTTON
+  led.setPercent(100);
+  Serial << "PWM  LED dimming to " << (led.getPercent()) << " %" << endl;
+#endif
 }
 
 void loop() {
@@ -405,7 +431,11 @@ void loop() {
   } else if (!somethingReceived) {
     if ( ((millis() - mLastLedChanges) >= FADE_INTERVAL) ||
         (mLastLedChanges == 0U) ) {
-      RainbowCycle(pPixels, &mRainbowPosition);
+      /* call rainbow only, when activated */
+      if (mRainbowPosition > 0) {
+        RainbowCycle(pPixels, &mRainbowPosition);
+      }
+      /* Handle overflow */
       if (mRainbowPosition < 254)
       {
         mRainbowPosition++;
