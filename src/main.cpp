@@ -57,7 +57,6 @@ DallasTemperature sensors(&oneWire);
 float mLastTemperatur = -10.0f;
 
 HomieNode oneLedNode /* to rule them all */("led", "led", "color");
-HomieNode stripLedNode /* to rule them all */("strip", "strip", "color", true, 1, NUMBER_LEDS);
 HomieNode lampNode("lamp", "lamp", "switch");
 HomieNode dimmNode("dimm", "dimm", "dimmer");
 #ifdef PIR_ENABLE
@@ -279,33 +278,6 @@ bool allLedsHandler(const HomieRange& range, const String& value) {
   return true;
 }
 
-bool ledHandler(const HomieRange& range, const String& value) {
-  if (!(range.isRange)) return false;  // only one switch is present
-
-  somethingReceived = true; // Stop animation
-  log(LEVEL_DEBUG, "Received rgb command", STATUS_MQTT_DETECTED);
-
-  int sep1 = value.indexOf(',');
-  int sep2 = value.indexOf(',', sep1 + 1);
-  int red = value.substring(0,sep1).toInt(); /* OpenHAB  hue (0-360°) */
-  int green = value.substring(sep1 + 1, sep2).toInt(); /* OpenHAB saturation (0-100%) */
-  int blue = value.substring(sep2 + 1, value.length()).toInt(); /* brightness (0-100%) */
-
-  uint8_t r = (red * 255) / 250;
-  uint8_t g = (green *255) / 250;
-  uint8_t b = (blue *255) / 250;
-
-
-  if (pPixels) {
-    uint32_t c = pPixels->Color(r,g,b);
-    pPixels->setPixelColor(range.index -1, c);
-    pPixels->show();   // make sure it is visible
-    if (mConnected) {
-      stripLedNode.setProperty("led").setRange(range).send(value);
-    }
-  }
-  return true;
-}
 
 bool lightOnHandler(const HomieRange& range, const String& value) {
   if (!range.isRange) return false;  // if it's not a range
@@ -359,9 +331,6 @@ void setup() {
   oneLedNode.advertise("ambient").setName("All Leds")
                             .setDatatype("color").setFormat("rgb")
                             .settable(allLedsHandler);
-  stripLedNode.advertise("led")
-                            .setDatatype("color").setFormat("rgb")
-                            .settable(ledHandler);
   lampNode.advertise("value").setName("Value")
                                       .setDatatype("Boolean")
                                       .settable(switchHandler);
