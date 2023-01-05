@@ -160,8 +160,7 @@ void loopHandler() {
     }
     monitor.setProperty("motion").send(String(mLastMotion ? "true" : "false"));
     
-    if ((mLastMotion == HIGH) && 
-        (mShutoffAfterMotion == TIME_FADE_DONE)) {
+    if (mLastMotion == HIGH) {
       
       /* clear LEDs */
       if (!somethingReceived) {
@@ -412,7 +411,11 @@ void loop() {
   } else if (!somethingReceived) {
     if ( ((millis() - mLastLedChanges) >= FADE_INTERVAL) ||
         (mLastLedChanges == 0U) ) {
-      RainbowCycle(pPixels, &mRainbowPosition);
+      /* call rainbow only, when activated */
+      if (mRainbowPosition > 0) {
+        RainbowCycle(pPixels, &mRainbowPosition);
+      }
+      /* Handle overflow */
       if (mRainbowPosition < 254)
       {
         mRainbowPosition++;
