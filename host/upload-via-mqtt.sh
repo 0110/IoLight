@@ -55,8 +55,12 @@ if [ $# -eq 4 ]; then
  OTA_AUTH=" -u $mqttUser -d $mqttPasswd"
 fi
 
-echo "Waiting for $homieId ..."
-mosquitto_sub -h $mqttHost $MOSQUITTO_AUTH -t "${mqttPrefix}${homieId}/#" -R -C 1
+deviceState=$(mosquitto_sub -h $mqttHost $MOSQUITTO_AUTH -t "${mqttPrefix}${homieId}/\$state" -C 1)
+if [ $deviceState != "ready" ]; then
+ echo "Waiting for $homieId ..."
+ mosquitto_sub -h $mqttHost $MOSQUITTO_AUTH -t "${mqttPrefix}${homieId}/#" -R -C 1
+fi
+
 $PYTHONCMD ota_updater.py -l $mqttHost $OTA_AUTH -t "$mqttPrefix" -i "$homieId" $firmwareFile
 
 exit 0
