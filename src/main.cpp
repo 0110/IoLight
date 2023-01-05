@@ -230,7 +230,7 @@ bool switchHandler(const HomieRange& range, const String& value) {
     lampNode.setProperty("value").send(value);
   } else if ( value.length() > 0 && isDigit(value.charAt(0))  ) {
       int targetVal = value.toInt();
-      if ((targetVal >= 0) && (targetVal <= 100)) {
+      if ((targetVal >= 0) && (targetVal <= PWM_MAXVALUE)) {
         log(LEVEL_LOG, String("MQTT | Dimm to ") + String(value.toInt()) + String( "% (0..1023)"), STATUS_PWM_STARTS);
         led.setPercent(targetVal);
         dimmNode.setProperty("value").send(value);

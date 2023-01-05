@@ -36,19 +36,19 @@ void PwmLED::loop(void) {
             pwmNewVal -= this->mStep;
         }
 
-        if ((pwmValDiff > PWM_MINSTEP) || (pwmValDiff < (-PWM_MINSTEP))) {
+        if ((pwmValDiff > this->mStep) || (pwmValDiff < (-this->mStep))) {
             if (pwmNewVal < 0) {
                 mDimValue = 0;
             } else if(pwmNewVal > PWM_MAXVALUE) {
                 mDimValue = PWM_MAXVALUE;
-            } else if (abs(pwmValDiff) < PWM_MINSTEP) {
+            } else if (abs(pwmValDiff) < this->mStep) {
                 mDimValue = mDimTarget;
             } else {
                 mDimValue = pwmNewVal;
             }
             analogWrite(this->mOutputPin, mDimValue); 
             mLastLEDupdate = millis();
-        } else if ((mDimValue > 0) && (pwmNewVal < PWM_MINSTEP)) {
+        } else if ((mDimValue > 0) && (pwmNewVal < this->mStep)) {
             /* close to shutdown; deactivate the light completly */
             mDimValue = 0;
             analogWrite(this->mOutputPin, mDimValue); 
