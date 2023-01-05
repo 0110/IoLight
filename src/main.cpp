@@ -269,6 +269,7 @@ bool allLedsHandler(const HomieRange& range, const String& value) {
 
   if (pPixels) {
     uint32_t c = pPixels->Color(r,g,b);
+    pPixels->setBrightness(255);
     pPixels->fill(c);
     pPixels->show();   // make sure it is visible
     if (mConnected) {
