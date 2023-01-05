@@ -101,10 +101,10 @@ void onHomieEvent(const HomieEvent &event)
   /* Send status information at start, based on Button input */
   if (digitalRead(GPIO_BUTTON) == HIGH) {
     lampNode.setProperty("value").send(HOMIE_TRUE);
-    dimmNode.setProperty("value").send(String(HOMIE_PERCENT_MAX));
+    dimmNode.setProperty("value").send(String(PWM_MAXVALUE));
   } else {
     lampNode.setProperty("value").send(HOMIE_FALSE);
-    dimmNode.setProperty("value").send(String(HOMIE_PERCENT_MIN));
+    dimmNode.setProperty("value").send(String("0"));
   }
 #endif
   mConnected = true;
@@ -231,7 +231,7 @@ bool switchHandler(const HomieRange& range, const String& value) {
   } else if ( value.length() > 0 && isDigit(value.charAt(0))  ) {
       int targetVal = value.toInt();
       if ((targetVal >= 0) && (targetVal <= 100)) {
-        log(LEVEL_LOG, String("MQTT | Dimm to ") + String(value.toInt()) + String( "%"), STATUS_PWM_STARTS);
+        log(LEVEL_LOG, String("MQTT | Dimm to ") + String(value.toInt()) + String( "% (0..1023)"), STATUS_PWM_STARTS);
         led.setPercent(targetVal);
         dimmNode.setProperty("value").send(value);
         if (targetVal == 0) {
@@ -338,6 +338,7 @@ void setup() {
   dimmNode.advertise("value").setName("Dimmer")
                                       .setDatatype("integer")
                                       .setUnit("%")
+                                      .setFormat("0:1023")
                                       .settable(switchHandler);
 #ifdef TEMP_ENABLE
   temperatureNode.advertise(NODE_TEMPERATUR).setName("Degrees")

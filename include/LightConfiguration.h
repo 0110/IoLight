@@ -7,7 +7,7 @@
 #ifndef LIGHT_CONFIGURATION_H
 #define LIGHT_CONFIGURATION_H
 
-#define FIRMWARE_VERSION "1.0.2"
+#define FIRMWARE_VERSION "1.0.3"
 
 #define NUMBER_LEDS 388
 
@@ -22,8 +22,6 @@
 
 #define HOMIE_TRUE      "true"
 #define HOMIE_FALSE     "false"
-#define HOMIE_PERCENT_MIN   0
-#define HOMIE_PERCENT_MAX   100
 
 #define GPIO_BUTTON     D6  /**< Input button */
 #define GPIO_WS2812     D1  /**< RGB LEDs */

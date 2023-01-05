@@ -57,8 +57,6 @@ public:
 
     void setOff(void);
     void setOn(void);
-    void toggle(void);
-
 };
 
 

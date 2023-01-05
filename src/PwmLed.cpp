@@ -41,6 +41,8 @@ void PwmLED::loop(void) {
                 mDimValue = 0;
             } else if(pwmNewVal > PWM_MAXVALUE) {
                 mDimValue = PWM_MAXVALUE;
+            } else if (abs(pwmValDiff) < PWM_MINSTEP) {
+                mDimValue = mDimTarget;
             } else {
                 mDimValue = pwmNewVal;
             }
@@ -61,8 +63,8 @@ bool PwmLED::isActivated(void) {
 }
 
 void PwmLED::setPercent(int targetValue) {
-    if ((targetValue >= 0) && (targetValue <= 100)) {
-        this->mDimTarget = ((targetValue * PWM_MAXVALUE) / 100U);
+    if ((targetValue >= 0) && (targetValue <= PWM_MAXVALUE)) {
+        this->mDimTarget = targetValue;
     }
 }
 
@@ -82,12 +84,4 @@ void PwmLED::setOff(void) {
 void PwmLED::setOn(void) {
     mDimValue = PWM_MAXVALUE; // activate LED with 0%
     analogWrite(this->mOutputPin, mDimValue);
-}
-
-void PwmLED::toggle(void) {
-    if (isActivated()) {
-        setOff();
-    } else {
-        setOn();
-    }
 }
