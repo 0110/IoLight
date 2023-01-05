@@ -74,7 +74,7 @@ bool somethingReceived = false;
 unsigned int mButtonPressingCount = 0;        /**< Delay before everything is reset */
 unsigned int mColorFadingCount = FADE_MAXVALUE;
 bool mLastMotion=false;
-bool mButtonLastState=false;
+int mButtonLastState=false;
 unsigned long mShutoffAfterMotion = TIME_UNDEFINED;     /**< Time, when LED has to be deactivated after motion */
 bool mConnected = false;
     
@@ -381,12 +381,6 @@ void setup() {
 
   pPixels->begin();
   pPixels->clear();
-
-  /* Set everything to red on start */
-  for( int i = 0; i < ledAmount.get(); i++ ) {
-      pPixels->setPixelColor(i, 0 /*red */, 20 /* green */, 0 /* blue */);
-  }
-  pPixels->show();
   Serial << "WS2812 Strip initialized with " << (ledAmount.get()) << " leds" << endl;
 #ifndef NOBUTTON
   pinMode(GPIO_BUTTON, INPUT); // GPIO0 as input
@@ -467,6 +461,7 @@ void loop() {
       setRgbColor(NULL);
     }
 
+#ifdef PIR_ENABLE
     if ((millis() - mLastLedChanges) >= FADE_INTERVAL) {
       /* LEDs are in the configured time frame, where they must be activated */
       if (millis() < mShutoffAfterMotion) {
@@ -508,6 +503,7 @@ void loop() {
 
       mLastLedChanges = millis();
     }
+#endif
   }
 
   // check serial
@@ -537,27 +533,28 @@ void loop() {
 
   }
 #ifndef NOBUTTON
-  // Use Flash button to reset configuration
-  if (digitalRead(GPIO_BUTTON) == HIGH) {
+  int currentButton = digitalRead(GPIO_BUTTON) ;
+  // Handle Button to toggle white LEDs
     if (mHomieConfigured) {
-      if (LOW == mButtonLastState) {
-        led.toggle();
-        log(LEVEL_DEBUG, "Button triggered", STATUS_HARDWARE_BUTTON);
-      }
-    } 
-  }
-  else 
-  {
-    if (mButtonPressingCount > 0) {
-      /* shutoff the LEDs */
-      for( int i = 0; i < ledAmount.get(); i++ ) {
-            pPixels->setPixelColor(i, pPixels->Color(0 /*red */, 0 /* green */, 0 /* blue */));
+      if (currentButton != mButtonLastState) {
+        log(LEVEL_DEBUG, "HW Button", STATUS_HARDWARE_BUTTON);
+        somethingReceived = true; // Stop animation
+        /* deactivate rgb LEDs */
+        pPixels->fill(pPixels->Color(0,0,0));
+        pPixels->setBrightness(0);
+        pPixels->show();
+
+        /* Directly map input switch to PWM output */
+        if (currentButton == HIGH ) {
+          led.setOn();
         }
-        pPixels->show();   // make sure it is visible
-      mButtonPressingCount = 0;
+        if (currentButton == LOW ) {
+          led.setOff();
+        }
+      }
+      mButtonLastState = currentButton;
     }
-  }
-  mButtonLastState = digitalRead(GPIO_BUTTON);
+  
 #endif  
 
 }
