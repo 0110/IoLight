@@ -59,7 +59,9 @@ float mLastTemperatur = -10.0f;
 HomieNode oneLedNode /* to rule them all */("led", "RGB led", "color");
 HomieNode lampNode("lamp", "Lamp switch", "switch");
 HomieNode dimmNode("dimm", "Lamp Dimmed", "dimmer");
+#ifdef PIR_ENABLE
 HomieNode monitor("monitor", "Monitor motion", "contact");
+#endif
 #ifdef TEMP_ENABLE
 HomieNode temperatureNode("temperature", "Temparture", "number");
 #endif
@@ -299,7 +301,10 @@ void setup() {
   Homie_setFirmware("light", FIRMWARE_VERSION);
   Homie.setLoopFunction(loopHandler);
   Homie.onEvent(onHomieEvent);
+
+  #ifdef PIR_ENABLE
   monitor.advertise("motion").setName("Monitor motion").setDatatype("Boolean");
+  #endif
   oneLedNode.advertise("ambient").setName("All Leds")
                             .setDatatype("color").setFormat("rgb")
                             .settable(allLedsHandler);
@@ -383,8 +388,11 @@ void setup() {
       }
   }
 #endif
+/* Always activate all LEDs if not controllable */
+#ifdef NOBUTTON
   led.setPercent(100);
   Serial << "PWM  LED dimming to " << (led.getPercent()) << " %" << endl;
+#endif
 }
 
 void loop() {
