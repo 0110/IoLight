@@ -96,7 +96,18 @@ void onHomieEvent(const HomieEvent &event)
     Serial.printf("NTP Setup with server %s\r\n", ntpServer.get());
     configTime(0, 0, ntpServer.get());
 #endif
-    mConnected = true;
+
+#ifndef NOBUTTON
+  /* Send status information at start, based on Button input */
+  if (digitalRead(GPIO_BUTTON) == HIGH) {
+    lampNode.setProperty("value").send("on");
+    dimmNode.setProperty("value").send(String("100"));
+  } else {
+    lampNode.setProperty("value").send("off");
+    dimmNode.setProperty("value").send(String("0"));
+  }
+#endif
+  mConnected = true;
   default:
     break;
   }
@@ -212,15 +223,22 @@ bool switchHandler(const HomieRange& range, const String& value) {
   if (value == "off" || value == "Off" || value == "OFF" || value == "false") {
     led.setOff();
     dimmNode.setProperty("value").send(value);
+    lampNode.setProperty("value").send(value);
   } else if (value == "on" || value == "On" || value == "ON" || value == "true") {
     led.setOn();
     dimmNode.setProperty("value").send(value);
+    lampNode.setProperty("value").send(value);
   } else if ( value.length() > 0 && isDigit(value.charAt(0))  ) {
       int targetVal = value.toInt();
       if ((targetVal >= 0) && (targetVal <= 100)) {
         log(LEVEL_LOG, String("MQTT | Dimm to ") + String(value.toInt()) + String( "%"), STATUS_PWM_STARTS);
         led.setPercent(targetVal);
         dimmNode.setProperty("value").send(value);
+        if (targetVal == 0) {
+          lampNode.setProperty("value").send("off");
+        } else {
+          lampNode.setProperty("value").send("on");
+        }
       } else {
           log(LEVEL_ERROR, String("MQTT | Unknown percent: '") + String(value) + String( "'"), STATUS_PWM_STARTS);
       }
