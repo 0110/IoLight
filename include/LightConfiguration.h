@@ -7,7 +7,25 @@
 #ifndef LIGHT_CONFIGURATION_H
 #define LIGHT_CONFIGURATION_H
 
-#define FIRMWARE_VERSION "0.8.0"
+#define FIRMWARE_VERSION "1.0.4"
+
+/***************** Build firmware name according compiled features ***/
+#ifndef NOBUTTON
+#define FIRMWARE_FEATURE1 "WithButton"
+#else
+#define FIRMWARE_FEATURE1 ""
+#endif
+#ifdef PIR_ENABLE
+#define FIRMWARE_FEATURE2 "WithPIR_"
+#else
+#define FIRMWARE_FEATURE2 ""
+#endif
+#ifdef TEMP_ENABLE
+#define FIRMWARE_FEATURE3 "WithTemp"
+#else
+#define FIRMWARE_FEATURE3 ""
+#endif
+#define FIRMWARE_NAME "light" FIRMWARE_FEATURE1 FIRMWARE_FEATURE2 FIRMWARE_FEATURE3
 
 #define NUMBER_LEDS 388
 
@@ -20,9 +38,18 @@
 #define TIME_UNDEFINED  0xFFFFFFFFU
 #define TIME_FADE_DONE  0xFFFFFFFEU
 
+#define HOMIE_TRUE      "true"
+#define HOMIE_FALSE     "false"
+
+#ifndef NOBUTTON
+#ifdef PIR_ENABLE
+#error PIR and BUTTON are both connected at same input -> select one method
+#endif
+#endif
+
 #define GPIO_BUTTON     D6  /**< Input button */
 #define GPIO_WS2812     D1  /**< RGB LEDs */
-#define GPIO_PIR        D5  /**< Passive infrared sensor */
+#define GPIO_PIR        D6  /**< Passive infrared sensor */
 #define GPIO_LED        D2  /**< None RGB light, controlled by mosfet */
 #define GPIO_DS18B20    D7  /**< One-Wire used for Dallas temperature sensor */
 
@@ -47,6 +74,7 @@ HomieSetting<long> ledAmount("leds", "Amount of LEDs (of type WS2812); Range 1 t
 HomieSetting<bool> oneWireSensorAvail("oneWire", "One wire Bus installed at D7 (disabled as default)");
 #endif
 #ifdef PIR_ENABLE
+#define     HOMIE_MAXPERCENT    100
 HomieSetting<const char*> dayColor("dayColor", "color to show at day");
 HomieSetting<const char*> nightColor("nightColor", "color to show at night");
 HomieSetting<long> dayPercent("dayPerc", "dim white light to x% at day (0: disabled)");
