@@ -2,7 +2,7 @@
 
 if [ $# -lt 3 ]; then
 	echo "Homie prefex and device index must be specified:"
-	echo "$0 <mqtt host> <prefix> <device index> (mqtt user)"
+	echo "$0 <mqtt host> <prefix> <device id> (mqtt user)"
 	echo "e.g."
 	echo "$0 192.168.0.2 test/ MyDeviceId"
 	echo "or"
