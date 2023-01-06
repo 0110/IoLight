@@ -322,10 +322,10 @@ void setup() {
   nightColor.setDefaultValue("red").setValidator([] (const char *candidate) {
     return extractColor(candidate, strlen(candidate)) != 0xFFFFFFFF;
   });
-  dayPercent.setDefaultValue(0).setValidator([] (long candidate) {
+  dayPercent.setDefaultValue(90).setValidator([] (long candidate) {
     return (candidate >= 0) && (candidate <= 100);
   });
-  nightPercent.setDefaultValue(0).setValidator([] (long candidate) {
+  nightPercent.setDefaultValue(10).setValidator([] (long candidate) {
     return (candidate >= 0) && (candidate <= 100);
   });
   nightStartHour.setDefaultValue(22).setValidator([] (long candidate) {
