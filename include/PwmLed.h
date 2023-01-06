@@ -12,7 +12,6 @@
 #define IOLIGHT_PWM_LED
 
 #define PWM_MAXVALUE    1023
-#define PWM_MINSTEP     3
 
 #define PWM_LED_DIM_TARGET_OFF -1
 
@@ -57,7 +56,6 @@ public:
 
     void setOff(void);
     void setOn(void);
-
 };
 
 

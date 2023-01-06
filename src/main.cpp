@@ -56,10 +56,12 @@ PwmLED led(GPIO_LED, FADE_INTERVAL, PWM_STEP);
 DallasTemperature sensors(&oneWire);
 float mLastTemperatur = -10.0f;
 
-HomieNode oneLedNode /* to rule them all */("led", "RGB led", "color");
-HomieNode lampNode("lamp", "Lamp switch", "switch");
-HomieNode dimmNode("dimm", "Lamp Dimmed", "dimmer");
+HomieNode oneLedNode /* to rule them all */("led", "led", "color");
+HomieNode lampNode("lamp", "lamp", "switch");
+HomieNode dimmNode("dimm", "dimm", "dimmer");
+#ifdef PIR_ENABLE
 HomieNode monitor("monitor", "Monitor motion", "contact");
+#endif
 #ifdef TEMP_ENABLE
 HomieNode temperatureNode("temperature", "Temparture", "number");
 #endif
@@ -72,6 +74,7 @@ bool somethingReceived = false;
 unsigned int mButtonPressingCount = 0;        /**< Delay before everything is reset */
 unsigned int mColorFadingCount = FADE_MAXVALUE;
 bool mLastMotion=false;
+int mButtonLastState=false;
 unsigned long mShutoffAfterMotion = TIME_UNDEFINED;     /**< Time, when LED has to be deactivated after motion */
 bool mConnected = false;
     
@@ -93,13 +96,25 @@ void onHomieEvent(const HomieEvent &event)
     Serial.printf("NTP Setup with server %s\r\n", ntpServer.get());
     configTime(0, 0, ntpServer.get());
 #endif
-    mConnected = true;
+
+#ifndef NOBUTTON
+  /* Send status information at start, based on Button input */
+  if (digitalRead(GPIO_BUTTON) == HIGH) {
+    lampNode.setProperty("value").send(HOMIE_TRUE);
+    dimmNode.setProperty("value").send(String(PWM_MAXVALUE));
+  } else {
+    lampNode.setProperty("value").send(HOMIE_FALSE);
+    dimmNode.setProperty("value").send(String("0"));
+  }
+#endif
+  mConnected = true;
   default:
     break;
   }
 }
 
-int setRgbColor(tm* tm) {      
+int setRgbColor(tm* tm) {  
+  #ifdef PIR_ENABLE    
       uint32_t color = extractColor(dayColor.get(), strlen(dayColor.get()) );
       int maxPercent = dayPercent.get();
 
@@ -133,6 +148,9 @@ int setRgbColor(tm* tm) {
         ;
       }
       return maxPercent;
+      #else
+      return 0;
+      #endif
 }
 
 void loopHandler() {
@@ -153,7 +171,7 @@ void loopHandler() {
     if (!mConnected || (tm.tm_year < 100)) { /* < 2000 as tm_year + 1900 is the year */
       return;
     }
-    monitor.setProperty("motion").send(String(mLastMotion ? "true" : "false"));
+    monitor.setProperty("motion").send(String(mLastMotion ? HOMIE_TRUE : HOMIE_FALSE));
     
     if (mLastMotion == HIGH) {
       
@@ -205,15 +223,22 @@ bool switchHandler(const HomieRange& range, const String& value) {
   if (value == "off" || value == "Off" || value == "OFF" || value == "false") {
     led.setOff();
     dimmNode.setProperty("value").send(value);
+    lampNode.setProperty("value").send(value);
   } else if (value == "on" || value == "On" || value == "ON" || value == "true") {
     led.setOn();
     dimmNode.setProperty("value").send(value);
+    lampNode.setProperty("value").send(value);
   } else if ( value.length() > 0 && isDigit(value.charAt(0))  ) {
       int targetVal = value.toInt();
-      if ((targetVal >= 0) && (targetVal <= 100)) {
-        log(LEVEL_LOG, String("MQTT | Dimm to ") + String(value.toInt()) + String( "%"), STATUS_PWM_STARTS);
+      if ((targetVal >= 0) && (targetVal <= PWM_MAXVALUE)) {
+        log(LEVEL_LOG, String("MQTT | Dimm to ") + String(value.toInt()) + String( "% (0..1023)"), STATUS_PWM_STARTS);
         led.setPercent(targetVal);
         dimmNode.setProperty("value").send(value);
+        if (targetVal == 0) {
+          lampNode.setProperty("value").send(HOMIE_FALSE);
+        } else {
+          lampNode.setProperty("value").send(HOMIE_TRUE);
+        }
       } else {
           log(LEVEL_ERROR, String("MQTT | Unknown percent: '") + String(value) + String( "'"), STATUS_PWM_STARTS);
       }
@@ -244,6 +269,7 @@ bool allLedsHandler(const HomieRange& range, const String& value) {
 
   if (pPixels) {
     uint32_t c = pPixels->Color(r,g,b);
+    pPixels->setBrightness(255);
     pPixels->fill(c);
     pPixels->show();   // make sure it is visible
     if (mConnected) {
@@ -294,7 +320,15 @@ void setup() {
   Homie_setFirmware("light", FIRMWARE_VERSION);
   Homie.setLoopFunction(loopHandler);
   Homie.onEvent(onHomieEvent);
+
+  // Load the settings and  set default values
+  ledAmount.setDefaultValue(NUMBER_LEDS).setValidator([] (long candidate) {
+    return (candidate > 0) && (candidate < 2048);
+  });
+
+  #ifdef PIR_ENABLE
   monitor.advertise("motion").setName("Monitor motion").setDatatype("boolean");
+  #endif
   oneLedNode.advertise("ambient").setName("All Leds")
                             .setDatatype("color").setFormat("rgb")
                             .settable(allLedsHandler);
@@ -304,6 +338,7 @@ void setup() {
   dimmNode.advertise("value").setName("Dimmer")
                                       .setDatatype("integer")
                                       .setUnit("%")
+                                      .setFormat("0:1023")
                                       .settable(switchHandler);
 #ifdef TEMP_ENABLE
   temperatureNode.advertise(NODE_TEMPERATUR).setName("Degrees")
@@ -311,10 +346,6 @@ void setup() {
                                       .setUnit("ºC");                                      
 #endif
 
-  // Load the settings and  set default values
-  ledAmount.setDefaultValue(NUMBER_LEDS).setValidator([] (long candidate) {
-    return (candidate > 0) && (candidate < 2048);
-  });
   #ifdef PIR_ENABLE
   dayColor.setDefaultValue("off").setValidator([] (const char *candidate) {
     return extractColor(candidate, strlen(candidate)) != 0xFFFFFFFF;
@@ -352,12 +383,6 @@ void setup() {
 
   pPixels->begin();
   pPixels->clear();
-
-  /* Set everything to red on start */
-  for( int i = 0; i < ledAmount.get(); i++ ) {
-      pPixels->setPixelColor(i, 0 /*red */, 20 /* green */, 0 /* blue */);
-  }
-  pPixels->show();
   Serial << "WS2812 Strip initialized with " << (ledAmount.get()) << " leds" << endl;
 #ifndef NOBUTTON
   pinMode(GPIO_BUTTON, INPUT); // GPIO0 as input
@@ -378,8 +403,11 @@ void setup() {
       }
   }
 #endif
+/* Always activate all LEDs if not controllable */
+#ifdef NOBUTTON
   led.setPercent(100);
   Serial << "PWM  LED dimming to " << (led.getPercent()) << " %" << endl;
+#endif
 }
 
 void loop() {
@@ -435,6 +463,7 @@ void loop() {
       setRgbColor(NULL);
     }
 
+#ifdef PIR_ENABLE
     if ((millis() - mLastLedChanges) >= FADE_INTERVAL) {
       /* LEDs are in the configured time frame, where they must be activated */
       if (millis() < mShutoffAfterMotion) {
@@ -476,6 +505,7 @@ void loop() {
 
       mLastLedChanges = millis();
     }
+#endif
   }
 
   // check serial
@@ -505,40 +535,28 @@ void loop() {
 
   }
 #ifndef NOBUTTON
-  // Use Flash button to reset configuration
-  if (digitalRead(GPIO_BUTTON) == HIGH) {
+  int currentButton = digitalRead(GPIO_BUTTON) ;
+  // Handle Button to toggle white LEDs
     if (mHomieConfigured) {
-      if (mButtonPressingCount > RESET_TRIGGER) {
-        /* shutoff the LEDs */
-        for( int i = 0; i < ledAmount.get(); i++ ) {
-            pPixels->setPixelColor(i, pPixels->Color(128 /*red */, 0 /* green */, 0 /* blue */));
+      if (currentButton != mButtonLastState) {
+        log(LEVEL_DEBUG, "HW Button", STATUS_HARDWARE_BUTTON);
+        somethingReceived = true; // Stop animation
+        /* deactivate rgb LEDs */
+        pPixels->fill(pPixels->Color(0,0,0));
+        pPixels->setBrightness(0);
+        pPixels->show();
+
+        /* Directly map input switch to PWM output */
+        if (currentButton == HIGH ) {
+          led.setOn();
         }
-        pPixels->show();   // make sure it is visible
-        if (SPIFFS.exists ("/homie/config.json") ) 
-        { 
-          Serial << "Delete Configuration" << endl;
-          SPIFFS.remove("/homie/config.json");
+        if (currentButton == LOW ) {
+          led.setOff();
         }
-        SPIFFS.end();
-      } else {
-        uint8_t position = (uint8_t) (mButtonPressingCount * 255 / RESET_TRIGGER);
-        RainbowCycle(pPixels, &position);
-        Serial << mButtonPressingCount << "/" << RESET_TRIGGER << " to reset" << endl;
-        mButtonPressingCount++;
       }
-    } 
-  }
-  else 
-  {
-    if (mButtonPressingCount > 0) {
-      /* shutoff the LEDs */
-      for( int i = 0; i < ledAmount.get(); i++ ) {
-            pPixels->setPixelColor(i, pPixels->Color(0 /*red */, 0 /* green */, 0 /* blue */));
-        }
-        pPixels->show();   // make sure it is visible
-      mButtonPressingCount = 0;
+      mButtonLastState = currentButton;
     }
-  }
+  
 #endif  
 
 }
