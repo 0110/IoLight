@@ -7,7 +7,7 @@
 #ifndef LIGHT_CONFIGURATION_H
 #define LIGHT_CONFIGURATION_H
 
-#define FIRMWARE_VERSION "1.0.3"
+#define FIRMWARE_VERSION "1.0.4"
 
 /***************** Build firmware name according compiled features ***/
 #ifndef NOBUTTON
@@ -74,6 +74,7 @@ HomieSetting<long> ledAmount("leds", "Amount of LEDs (of type WS2812); Range 1 t
 HomieSetting<bool> oneWireSensorAvail("oneWire", "One wire Bus installed at D7 (disabled as default)");
 #endif
 #ifdef PIR_ENABLE
+#define     HOMIE_MAXPERCENT    100
 HomieSetting<const char*> dayColor("dayColor", "color to show at day");
 HomieSetting<const char*> nightColor("nightColor", "color to show at night");
 HomieSetting<long> dayPercent("dayPerc", "dim white light to x% at day (0: disabled)");

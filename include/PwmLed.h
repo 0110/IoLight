@@ -11,7 +11,8 @@
 #ifndef IOLIGHT_PWM_LED
 #define IOLIGHT_PWM_LED
 
-#define PWM_MAXVALUE    1023    /**< Maximum value of PWM driver, used in ESP8266 */
+#define PWM_MAXVALUE        1023    /**< Maximum value of PWM driver, used in ESP8266 */
+#define PWM_HOMIEMAXVALUE   "1023"
 
 #define PWM_LED_DIM_TARGET_OFF -1
 

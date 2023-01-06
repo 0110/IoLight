@@ -116,13 +116,13 @@ void onHomieEvent(const HomieEvent &event)
 int setRgbColor(tm* tm) {  
   #ifdef PIR_ENABLE    
       uint32_t color = extractColor(dayColor.get(), strlen(dayColor.get()) );
-      int maxPercent = dayPercent.get();
+      int maxPercent = (dayPercent.get() * PWM_MAXVALUE) / HOMIE_MAXPERCENT;
 
       if ((tm != NULL) &&
           ((nightStartHour.get() <= tm->tm_hour) || (tm->tm_hour <= nightEndHour.get()) ) 
           ) {
           color = extractColor(nightColor.get(), strlen(nightColor.get()) );
-          maxPercent = nightPercent.get();
+          maxPercent = (nightPercent.get() * PWM_MAXVALUE) / HOMIE_MAXPERCENT;
           oneLedNode.setProperty("ambient").send(String(nightColor.get()));
       } else {
         oneLedNode.setProperty("ambient").send(String(dayColor.get()));
@@ -179,13 +179,13 @@ void loopHandler() {
       if (!somethingReceived) {
         pPixels->clear();
         pPixels->show();
-        led.setPercent(0);
       }
       somethingReceived = true; // Stop the animation, as a montion was detected */
 
       int maxPercent = setRgbColor(&tm);
+      led.setPercent(maxPercent);
 
-      log(LEVEL_DEBUG, String(mShutoffAfterMotion, 16) + String(" ") +
+      log(LEVEL_DEBUG, String("") +
           String("Fade:" + String(maxPercent) + "%" +
           String("RGB :" + String(mColorFadingCount) + "%") +
           " Time: " + millis() + " left: " + String((mShutoffAfterMotion- millis())/1000) + String("s")), STATUS_MOTION_DETECTED);
@@ -258,9 +258,9 @@ bool allLedsHandler(const HomieRange& range, const String& value) {
 
   int sep1 = value.indexOf(',');
   int sep2 = value.indexOf(',', sep1 + 1);
-  int red = value.substring(0,sep1).toInt(); /* OpenHAB  hue (0-360°) */
-  int green = value.substring(sep1 + 1, sep2).toInt(); /* OpenHAB saturation (0-100%) */
-  int blue = value.substring(sep2 + 1, value.length()).toInt(); /* brightness (0-100%) */
+  int red = value.substring(0,sep1).toInt();
+  int green = value.substring(sep1 + 1, sep2).toInt();
+  int blue = value.substring(sep2 + 1, value.length()).toInt();
 
   uint8_t r = (red * 255) / 250;
   uint8_t g = (green *255) / 250;
@@ -338,7 +338,7 @@ void setup() {
   dimmNode.advertise("value").setName("Dimmer")
                                       .setDatatype("integer")
                                       .setUnit("%")
-                                      .setFormat(String("0:" + String(PWM_MAXVALUE)).c_str())
+                                      .setFormat("0:" PWM_HOMIEMAXVALUE)
                                       .settable(switchHandler);
 #ifdef TEMP_ENABLE
   temperatureNode.advertise(NODE_TEMPERATUR).setName("Degrees")
@@ -354,10 +354,10 @@ void setup() {
     return extractColor(candidate, strlen(candidate)) != 0xFFFFFFFF;
   });
   dayPercent.setDefaultValue(90).setValidator([] (long candidate) {
-    return (candidate >= 0) && (candidate <= 100);
+    return (candidate >= 0) && (candidate <= HOMIE_MAXPERCENT);
   });
   nightPercent.setDefaultValue(10).setValidator([] (long candidate) {
-    return (candidate >= 0) && (candidate <= 100);
+    return (candidate >= 0) && (candidate <= HOMIE_MAXPERCENT);
   });
   nightStartHour.setDefaultValue(22).setValidator([] (long candidate) {
     return (candidate >= 0) && (candidate < 24);
@@ -500,7 +500,7 @@ void loop() {
       if ((oddCalled == 0) && (mConnected) && /* Update MQTT only every tenth call */
           (mSentPwmValue != pwmValue)) { 
         mSentPwmValue = pwmValue;
-        dimmNode.setProperty("value").send(String(((pwmValue * 100U) / PWM_MAXVALUE)));
+        dimmNode.setProperty("value").send(String(pwmValue));
       }
 
       mLastLedChanges = millis();
