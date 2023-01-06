@@ -23,9 +23,15 @@
 #define HOMIE_TRUE      "true"
 #define HOMIE_FALSE     "false"
 
+#ifndef NOBUTTON
+#ifdef PIR_ENABLE
+#error PIR and BUTTON are both connected at same input -> select one method
+#endif
+#endif
+
 #define GPIO_BUTTON     D6  /**< Input button */
 #define GPIO_WS2812     D1  /**< RGB LEDs */
-#define GPIO_PIR        D5  /**< Passive infrared sensor */
+#define GPIO_PIR        D6  /**< Passive infrared sensor */
 #define GPIO_LED        D2  /**< None RGB light, controlled by mosfet */
 #define GPIO_DS18B20    D7  /**< One-Wire used for Dallas temperature sensor */
 
