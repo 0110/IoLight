@@ -9,6 +9,24 @@
 
 #define FIRMWARE_VERSION "1.0.3"
 
+/***************** Build firmware name according compiled features ***/
+#ifndef NOBUTTON
+#define FIRMWARE_FEATURE1 "WithButton"
+#else
+#define FIRMWARE_FEATURE1 ""
+#endif
+#ifdef PIR_ENABLE
+#define FIRMWARE_FEATURE2 "WithPIR_"
+#else
+#define FIRMWARE_FEATURE2 ""
+#endif
+#ifdef TEMP_ENABLE
+#define FIRMWARE_FEATURE3 "WithTemp"
+#else
+#define FIRMWARE_FEATURE3 ""
+#endif
+#define FIRMWARE_NAME "light" FIRMWARE_FEATURE1 FIRMWARE_FEATURE2 FIRMWARE_FEATURE3
+
 #define NUMBER_LEDS 388
 
 #define BLINK_INTERVAL  500 /**< Milliseconds cycle time */

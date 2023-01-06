@@ -317,7 +317,7 @@ void setup() {
   SPIFFS.begin();
   Serial.begin(115200);
   Serial << endl << endl;
-  Homie_setFirmware("light", FIRMWARE_VERSION);
+  Homie_setFirmware(FIRMWARE_NAME, FIRMWARE_VERSION);
   Homie.setLoopFunction(loopHandler);
   Homie.onEvent(onHomieEvent);
 
