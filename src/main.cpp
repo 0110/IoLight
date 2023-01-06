@@ -338,7 +338,7 @@ void setup() {
   dimmNode.advertise("value").setName("Dimmer")
                                       .setDatatype("integer")
                                       .setUnit("%")
-                                      .setFormat("0:1023")
+                                      .setFormat(String("0:" + String(PWM_MAXVALUE)).c_str())
                                       .settable(switchHandler);
 #ifdef TEMP_ENABLE
   temperatureNode.advertise(NODE_TEMPERATUR).setName("Degrees")
@@ -396,7 +396,7 @@ void setup() {
 #ifdef TEMP_ENABLE 
   if (oneWireSensorAvail.get()) {
     sensors.begin();
-          for(int j=0; j < TEMP_SENSOR_MEASURE_SERIES && sensors.getDeviceCount() == 0; j++) {
+    for(int j=0; j < TEMP_SENSOR_MEASURE_SERIES && sensors.getDeviceCount() == 0; j++) {
         delay(100);
         sensors.begin();
         Serial << "Reset 1-Wire Bus" << endl;
@@ -405,8 +405,8 @@ void setup() {
 #endif
 /* Always activate all LEDs if not controllable */
 #ifdef NOBUTTON
-  led.setPercent(100);
-  Serial << "PWM  LED dimming to " << (led.getPercent()) << " %" << endl;
+  led.setPercent(PWM_MAXVALUE);
+  Serial << "PWM  LED dimming to " << (led.getPercent()) << " % (0 .. " << PWM_MAXVALUE << ")" << endl;
 #endif
 }
 
@@ -479,8 +479,8 @@ void loop() {
           log(LEVEL_INFO, String("Time gone: ") + String((millis() - mShutoffAfterMotion) / 1000) + String("s ") + 
                           String(pPixels->getBrightness()) + String("% ") +
                           String(led.isActivated()) + String(" PWM activated:") +
-                          String(led.getCurrentPwm()) + String("/1023 ") +
-                          String(led.getPercent()) + String("%")
+                          String(led.getCurrentPwm()) + String(" targets ") +
+                          String(led.getPercent()) + String("% 0..1023")
                           , STATUS_PWM_FINISHED);
           
           /* shutdown again */
