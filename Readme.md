@@ -27,7 +27,8 @@ And the following Librarys in Visual Studio Code:
 * Neo Pixel (from Adafruit)
  
 ### Windows
-**Not working**
+with wsl:
+https://learn.microsoft.com/de-de/windows/wsl/connect-usb
 
 Compiler generates unbootable image.
 

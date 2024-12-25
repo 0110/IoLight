@@ -375,7 +375,7 @@ void setup() {
     return true;
   });
 #endif
-
+  WiFi.setPhyMode(WIFI_PHY_MODE_11G);
   Homie.setup();
   mHomieConfigured = Homie.isConfigured();
 
@@ -559,6 +559,7 @@ void loop() {
   
 #endif  
 
+yield();
 }
 
 void log(int level, String message, int statusCode)
