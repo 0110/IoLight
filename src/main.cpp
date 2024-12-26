@@ -252,28 +252,56 @@ bool switchHandler(const HomieRange& range, const String& value) {
 
 bool allLedsHandler(const HomieRange& range, const String& value) {
   if (range.isRange) return false;  // only one switch is present
+  if (value.indexOf('-')>0) { //homeassistant mqtt light Brightness,R-G-B 
+    somethingReceived = true; // Stop animation
+    log(LEVEL_DEBUG, "Received rgb command", STATUS_MQTT_DETECTED);
 
-  somethingReceived = true; // Stop animation
-  log(LEVEL_DEBUG, "Received rgb command", STATUS_MQTT_DETECTED);
+    int sep1 = value.indexOf(',');
+    int sep2 = value.indexOf('-', sep1 + 1);
+    int sep3 = value.indexOf('-', sep2 + 1);
+    int bright = value.substring(0,sep1).toInt();
+    int red = value.substring(sep1 + 1,sep2).toInt();
+    int green = value.substring(sep2 + 1, sep3).toInt();
+    int blue = value.substring(sep3 + 1, value.length()).toInt();
 
-  int sep1 = value.indexOf(',');
-  int sep2 = value.indexOf(',', sep1 + 1);
-  int red = value.substring(0,sep1).toInt();
-  int green = value.substring(sep1 + 1, sep2).toInt();
-  int blue = value.substring(sep2 + 1, value.length()).toInt();
+    if (pPixels) 
+    {
+     if (sep2+1==sep3) {
+       pPixels->setBrightness(bright);
+      }
+      else if(sep1==0){
+      uint32_t c = pPixels->Color(red,green,blue);
+      pPixels->fill(c);
+      }
+      pPixels->show();   // make sure it is visible
+      if (mConnected) {
+        oneLedNode.setProperty("ambient").send(String(value));
+      }
+    }
+  } 
+  else{
+    somethingReceived = true; // Stop animation
+    log(LEVEL_DEBUG, "Received rgb command", STATUS_MQTT_DETECTED);
 
-  uint8_t r = (red * 255) / 250;
-  uint8_t g = (green *255) / 250;
-  uint8_t b = (blue *255) / 250;
+    int sep1 = value.indexOf(',');
+    int sep2 = value.indexOf(',', sep1 + 1);
+    int red = value.substring(0,sep1).toInt();
+    int green = value.substring(sep1 + 1, sep2).toInt();
+    int blue = value.substring(sep2 + 1, value.length()).toInt();
+
+    uint8_t r = (red * 255) / 250;
+    uint8_t g = (green *255) / 250;
+    uint8_t b = (blue *255) / 250;
 
 
-  if (pPixels) {
-    uint32_t c = pPixels->Color(r,g,b);
-    pPixels->setBrightness(255);
-    pPixels->fill(c);
-    pPixels->show();   // make sure it is visible
-    if (mConnected) {
-      oneLedNode.setProperty("ambient").send(String(value));
+    if (pPixels) {
+      uint32_t c = pPixels->Color(r,g,b);
+      pPixels->setBrightness(255);
+      pPixels->fill(c);
+      pPixels->show();   // make sure it is visible
+      if (mConnected) {
+        oneLedNode.setProperty("ambient").send(String(value));
+      }
     }
   }
   return true;

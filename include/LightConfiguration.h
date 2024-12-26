@@ -7,7 +7,7 @@
 #ifndef LIGHT_CONFIGURATION_H
 #define LIGHT_CONFIGURATION_H
 
-#define FIRMWARE_VERSION "1.0.4"
+#define FIRMWARE_VERSION "1.0.5"
 
 /***************** Build firmware name according compiled features ***/
 #ifndef NOBUTTON

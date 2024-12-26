@@ -53,6 +53,8 @@ Open a new Atom-Terminal and generate the filesystem with the following command 
 ```pio run -t buildfs```
 Upload this new generated filesystem with:
 ```pio run -t uploadfs```
+Upload via cmd 
+```./upload-via-mqtt.sh mqtt.home wohnzimmer/ right```
 
 # Hardware
 * D1: WS2812 RGB LEDs
